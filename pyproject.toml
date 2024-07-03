@@ -1,0 +1,132 @@
+[build-system]
+requires = [
+    "setuptools>=60",
+#    "setuptools-scm>=8.0",
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "problog"
+version = "0.0.1"
+description = "REIT AI experiments for teaching."
+authors = [
+    {name = "Hobson Lane", email = "git@totalgood.com"},
+]
+license = {text = "GPLv3+"}
+# # Let setuptools read git tags or reit.__version__ attribute for the version number
+# dynamic = ["version"]
+readme = "README.md"
+requires-python = ">=3.10"
+keywords = ["NLP", "LLM", "vector-search", "ANN", "numpy", "search", "semantic search", "RAG", "personal assistant", "command line"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    # "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Text Processing :: Linguistic",
+    "Topic :: Text Processing", "Topic :: Communications",
+    "Topic :: Communications :: Chat", "Intended Audience :: Education",
+]
+
+dependencies = [
+  "fastapi",
+  "flask",
+  "gradio",
+  "ipython",
+  "joblib",
+  "jsonlines",
+  "jupyter",
+  "jupyter-console",
+  "numdifftools",
+  "numpy",
+  "openai",
+  "pandas[html]",
+  "panel",
+  "pytest-coverage",
+  "python-dotenv",
+  "scikit-learn",
+  "spacy",
+  "tastymap",
+  "treelib",  # ascii tree diagrams similar to `tree` bash command
+  # "torch",
+  "sentence-transformers",
+  ]
+
+[project.optional-dependencies]
+test = ["pytest-coverage", "black", "twine", "pip", "build", "wheel"]
+all = ["test"]
+
+[project.scripts]
+reit = "reit.llm:chat"
+
+# ... other project metadata fields as listed in:
+#     https://packaging.python.org/en/latest/guides/writing-pyproject-toml/
+
+
+[tool.setuptools.package-data]
+reit = [
+    "data/*",
+]
+
+# [build-system]
+# requires = ["poetry-core"]
+# build-backend = "poetry.core.masonry.api"
+
+
+[tool.ruff]
+# Exclude a variety of commonly ignored directories.
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".ipynb_checkpoints",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pyenv",
+    ".venv",
+    ".pytest_cache",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    ".vscode",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "site-packages",
+    "venv",
+    ".venv",
+]
+line-length = 125  # black line-length=88
+indent-width = 4
+target-version = "py39"
+
+[tool.ruff.lint]
+# Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`)  codes by default.
+select = ["E", "F"] # default: ["E4", "E7", "E9", "F"]
+ignore = []
+fixable = ["ALL"]
+unfixable = []
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[tool.ruff.format]
+# # Like Black, use double quotes for strings.
+# quote-style = "double"
+# Like Black, indent with spaces, rather than tabs.
+indent-style = "space"
+# # Like Black, respect magic trailing commas.
+# skip-magic-trailing-comma = false
+# Like Black, automatically detect the appropriate line ending.
+line-ending = "auto"
