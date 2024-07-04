@@ -1,5 +1,4 @@
 # BigData
-.knowt-data/corpus_runestone_html/
 **/*.embeddings.memmap
 # .knowt-data/corpus_obsidian
 
@@ -10,7 +9,6 @@ venv/
 .DS_Store
 **/*.joblib
 **/*.pickle
-**/*.json
 
 # DL models
 *.pt
@@ -129,4 +127,3 @@ docs/**/*.html
 !.env_template
 !.env.example
 !.env_example
-.knowt-data
