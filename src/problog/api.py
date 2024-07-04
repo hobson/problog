@@ -1,13 +1,15 @@
 from openai import OpenAI, AsyncOpenAI
 import os
 from dotenv import load_dotenv
+import requests
 
 load_dotenv()
 endpoints = dict(
     openrouter=dict(
         key=os.environ.get("OPEN_ROUTER_KEY"),
         domain="openrouter.ai",
-        path="api/v1"),
+        path="api/v1",
+        models_path='models'),
     openai=dict(
         key=os.environ.get("OPEN_AI_KEY"),
         domain="api.openai.com",
@@ -19,21 +21,47 @@ endpoints = dict(
 )
 
 LLM_API_KEY, LLM_API_FQDN, LLM_API_PATH = endpoints['openai'].values()
-print(f'key: {LLM_API_KEY[:3]}...{LLM_API_KEY[-2:]}')
+# print(f'key: {LLM_API_KEY[:3]}...{LLM_API_KEY[-2:]}')
 
 
-def get_client(key=LLM_API_KEY, domain=LLM_API_FQDN, path=LLM_API_PATH):  # "api.together.xyz"):
-    return OpenAI(
-        api_key=key,
-        base_url=f"https://{domain}/{path.strip('/')}/",
+def get_model_choices(provider='openrouter'):
+    url = (
+        'https:/'
+        + '/' + endpoints[provider].get('domain').strip('/')
+        + '/' + endpoints[provider].get('path').strip('/')
+        + '/' + endpoints[provider].get('models').strip('/')
+    )
+    url = get_endpoint_url(provider=provider, models=True)
+    resp = requests.get(url)
+    data = resp.json()['data']
+    return data
+
+
+def get_endpoint_url(endpoint='openrouter', models=False):
+    kwargs = endpoints.get(endpoint)
+    url = 'https://'
+    for k in ('domain path' + (models * ' models')).split():
+        url += '/' + kwargs.get(k, '')
+    return url
+
+    # url = '/'.join([ for s in ])
+    #     'https:/'
+    #     + '/' + endpoints[provider].get('domain').strip('/')
+    #     + '/' + endpoints[provider].get('path').strip('/')
+    #     + '/' + endpoints[provider].get('models').strip('/')
+    # )
+
+
+def get_client(endpoint='openrouter', APIClass=OpenAI):  # "api.together.xyz"):
+    endpoint = endpoints.get(endpoint)
+    return APIClass(
+        api_key=endpoint.get('key'),
+        base_url=f"https://{endpoint.get('domain')}/{endpoint.get('path').strip('/')}/",
     )
 
 
-def get_aclient(domain=LLM_API_FQDN, path=LLM_API_PATH):  # "api.together.xyz"):
-    return AsyncOpenAI(
-        api_key=LLM_API_KEY,
-        base_url=f"https://{domain}/{path.strip('/')}/",
-    )
+def get_aclient(endpoint='openrouter', APIClass=AsyncOpenAI):  # "api.together.xyz"):
+    return get_client(endpoint=endpoint, APIClass=APIClass)
 
 
 def chat():

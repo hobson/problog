@@ -11,7 +11,19 @@ from treelib import Tree  # , Node
 from jsonlines import jsonlines as jsl
 import json
 
+# import numpy as np
+# from matplotlib import pyplot as plt
+# from tastymap import cook_tmap, pair_tbar
+
 from problog import api
+
+# colorbar = cook_tmap(
+#     tmap,
+#     bounds=[0, 50, 100],
+#     labels=["0.00", "0.50", "1.00"],
+#     uniform_spacing=True,
+# )
+
 
 load_dotenv()
 
@@ -20,23 +32,38 @@ PRIVATE_DIR = Path(api.__file__).resolve().parent.parent.parent / 'data' / 'priv
 PRIVATE_DIR.mkdir(exist_ok=True, parents=True)
 assert PRIVATE_DIR.is_dir()
 
-COLORMAP = "viridis_r"
-NUM_COLORS = 8
 SYSTEM_PROMPT = """You are an smart AI assistant that knows math and does not halucenate.""".strip()
 
 
-TMAP = tm.cook_tmap(COLORMAP, NUM_COLORS)
+TMAP = tm.cook_tmap(
+    ["red", "purple", "blue", "black"],
+    reverse=False,
+    num_colors=11,
+    name='Token probability',
+    hue=1,
+    saturation=1,
+    bad='',
+    under='',
+    over='',
+    value=1)
+# TMAP._repr_html_()
+# <div style="vertical-align: middle;"><strong>Token probability</strong> </div>\
+# <div class="cmap"><img alt="Token probability colormap" title="Token probability" style="border: 1px solid #555;"\
+#       src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAABACAYAAABs"...\
+# width: 1em; height: 1em; margin: 0; vertical-align: middle; border: 1px solid #555; background-color: #000000ff;"></div></div>
 COLORS = TMAP.to_model("hex")  # noqa
+# array(['#ff0600', '#d90425', '#b3024b', '#8d0170', '#680097', '#4300be',
+#        '#1e00e5', '#0500e5', '#040099', '#02004c', '#000000'], dtype='<U7')
 
 
 def color_by_logprob(text, log_prob, colors=COLORS):
     """ Add <span style='color: {color_hex}'> around text based on log probability < 0 and list of 100 colors"""
-    linear_prob = np.round(np.exp(log_prob) * 100, 2)
     # select index based on probability
-    color_index = int(linear_prob // (100 / (len(colors) - 1)))
+    color_hex = colors[int(np.exp(log_prob) * (len(colors) - 1))]
     # Generate HTML output with the chosen color
-    quote = '\'"'[int("'" in text)]  # use the quote symbol not already used within the text
-    return f'<span style={quote}color: {colors[color_index]};{quote}>{text}</span>'
+    text.replace('"', '&quot;')
+    # quote = '\'"'[int("'" in text)]  # use the quote symbol not already used within the text
+    return f'<span style="color:{color_hex};">{text}</span>'
 
 
 def color_by_prob(text, prob, colors=COLORS):
@@ -334,46 +361,23 @@ async def chat(
 
 
 def app():
-    pn.extension()
-    api_key_input = pn.widgets.PasswordInput(
-        name="API Key",
-        placeholder="sk-...",
-        width=150,
-    )
-    system_input = pn.widgets.TextAreaInput(
-        name="System Prompt",
-        value=SYSTEM_PROMPT,
-        rows=1,
-        auto_grow=True,
-    )
-    model_selector = pn.widgets.Select(
-        name="Model",
-        options=["gpt-3.5-turbo", "gpt-4"],
-        width=150,
-    )
-    temperature_input = pn.widgets.FloatInput(
-        name="Temperature", start=0, end=2, step=0.01, value=1, width=100
-    )
-    max_tokens_input = pn.widgets.IntInput(name="Max Tokens", start=0, value=256, width=100)
-    seed_input = pn.widgets.IntInput(name="Seed", start=0, end=100, value=0, width=100)
-    memory_toggle = pn.widgets.Toggle(
-        name="Include Memory", value=False, width=100, margin=(22, 5)
-    )
-
-    async def respond_to_input(contents: str, user: str, instance: pn.chat.ChatInterface):
+    async def respond_to_input(
+            contents: str,
+            user: str,
+            instance: pn.chat.ChatInterface
+    ):
         # TODO: pulldown for model_name
         # TODO: pulldown for LLM API URL
+        # TODO: orange or red for lowest logprob, dark blue for highest logprob
 
         if api_key_input.value:
             aclient.api_key = api_key_input.value
         elif not getattr(aclient, 'api_key', None):
             instance.send("Please provide an LLM API key", respond=False, user="ChatGPT")
         # add system prompt
-        if system_input.value:
-            system_message = {"role": "system", "content": system_input.value}
-            messages = [system_message]
-        else:
-            messages = []
+        messages = []
+        if system_prompt_widget.value:
+            messages.append({"role": "system", "content": system_prompt_widget.value})
         # gather messages for memory
         if memory_toggle.value:
             messages += instance.serialize(custom_serializer=custom_serializer)
@@ -400,6 +404,42 @@ def app():
                 message += color_by_logprob(content, log_prob)
                 yield message
 
+    pn.extension()
+    provider_pulldown = pn.widgets.Select(
+        name="Provider",
+        options=list(api.endpoints.keys()),
+        width=100,
+    )
+    api_key_input = pn.widgets.PasswordInput(
+        name="API Key",
+        placeholder="sk-...",
+        width=80,
+    )
+
+    system_prompt_widget = pn.widgets.TextAreaInput(
+        name="System Prompt",
+        placeholder="You are an AI assistant ...",
+        value=SYSTEM_PROMPT,
+        cols=3,
+        rows=4,
+        resizable='height',
+        min_width=256,
+        max_width=512,
+        auto_grow=True,  # grow in height to match input text
+    )
+    model_selector = pn.widgets.Select(
+        name="Model",
+        options=["gpt-3.5-turbo", "gpt-4"],
+        width=150,
+    )
+    temperature_input = pn.widgets.FloatInput(
+        name="Temperature", start=0, end=2, step=0.01, value=1, width=100
+    )
+    max_tokens_input = pn.widgets.IntInput(name="Max Tokens", start=0, value=256, width=100)
+    seed_input = pn.widgets.IntInput(name="Seed", start=0, end=100, value=0, width=100)
+    memory_toggle = pn.widgets.Toggle(
+        name="Include Memory", value=False, width=100, margin=(22, 5)
+    )
     chat_interface = pn.chat.ChatInterface(
         callback=respond_to_input,
         callback_user="ChatGPT",
@@ -407,16 +447,20 @@ def app():
     )
     page = pn.Column(
         pn.Row(
+            provider_pulldown,
             api_key_input,
-            system_input,
             model_selector,
             temperature_input,
             max_tokens_input,
             seed_input,
             memory_toggle,
-            align="center",
+            align="start",
         ),
-        pn.Row(TMAP._repr_html_(), align="center"),
+        pn.Row(
+            system_prompt_widget,
+            TMAP._repr_html_(),
+            align="start"
+        ),
         chat_interface,
     )
     return page
@@ -424,6 +468,7 @@ def app():
 
 if __name__ == '__main__':
     page = app()
-    ans = input('Launch a flask app (Y/[N]) ? ') + ' '
-    if (ans or ' ')[0].lower() == 'y':
-        page.show()
+    page.show()
+    # ans = input('Launch a flask app (Y/[N]) ? ') + ' '
+    # if (ans or ' ')[0].lower() == 'y':
+    #     page.show()
