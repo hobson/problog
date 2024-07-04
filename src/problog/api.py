@@ -3,16 +3,28 @@ import os
 from dotenv import load_dotenv
 
 load_dotenv()
-LLM_API_KEY = os.environ.get("OPEN_ROUTER_KEY")
-LLM_API_FQDN, LLM_API_PATH = "api.openai.com", 'v1'
-# LLM_FQDN = "api.openai.com"
-# LLM_FQDN = "api.openai.com"
+endpoints = dict(
+    openrouter=dict(
+        key=os.environ.get("OPEN_ROUTER_KEY"),
+        domain="openrouter.ai",
+        path="api/v1"),
+    openai=dict(
+        key=os.environ.get("OPEN_AI_KEY"),
+        domain="api.openai.com",
+        path="v1"),
+    togetherai=dict(
+        key=os.environ.get("TOGETHER_AI_KEY"),
+        domain="together.ai",
+        path="api/v1"),
+)
+
+LLM_API_KEY, LLM_API_FQDN, LLM_API_PATH = endpoints['openai'].values()
 print(f'key: {LLM_API_KEY[:3]}...{LLM_API_KEY[-2:]}')
 
 
-def get_client(domain=LLM_API_FQDN, path=LLM_API_PATH):  # "api.together.xyz"):
+def get_client(key=LLM_API_KEY, domain=LLM_API_FQDN, path=LLM_API_PATH):  # "api.together.xyz"):
     return OpenAI(
-        api_key=LLM_API_KEY,
+        api_key=key,
         base_url=f"https://{domain}/{path.strip('/')}/",
     )
 
