@@ -1,7 +1,6 @@
 # BigData
 **/*.embeddings.memmap
 # .knowt-data/corpus_obsidian
-**/node_modules
 **/.ipynb_checkpoints
 .venv/
 venv/
@@ -15,7 +14,7 @@ venv/
 **/checkpoints/
 **/checkpoint/
 
-# src/nlpia2/data
+# bigdata
 db.sqlite3
 *.zip
 *.pkl
@@ -76,7 +75,7 @@ poetry.lock
 .vscode
 tags
 *.code-workspace
-*.sublime-workspace
+# *.sublime-workspace
 
 # Package files
 *.egg
@@ -127,3 +126,6 @@ docs/**/*.html
 !.env_template
 !.env.example
 !.env_example
+
+# frontend (js)
+**/node_modules
