@@ -56,6 +56,12 @@ COLORS = TMAP.to_model("hex")  # noqa
 #        '#1e00e5', '#0500e5', '#040099', '#02004c', '#000000'], dtype='<U7')
 
 
+aclient = api.get_aclient()
+print('app.aclient:', aclient)
+print('app.aclient.base_url:', aclient.base_url)
+print('app.aclient.api-key:', aclient.api_key[:3], '...', aclient.api_key[-3:])
+
+
 def color_by_logprob(text, log_prob, colors=COLORS):
     """ Add <span style='color: {color_hex}'> around text based on log probability < 0 and list of 100 colors"""
     # select index based on probability
@@ -94,9 +100,6 @@ def custom_serializer(content):
     if not matches:
         return content
     return ''.join(matches)
-
-
-aclient = api.get_aclient()
 
 
 def choices_html_table(token_prob_hist):

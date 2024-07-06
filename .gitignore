@@ -1,7 +1,7 @@
 # BigData
 **/*.embeddings.memmap
 # .knowt-data/corpus_obsidian
-
+**/node_modules
 **/.ipynb_checkpoints
 .venv/
 venv/
