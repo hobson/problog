@@ -7,13 +7,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "problog"
-version = "0.0.1"
-description = "REIT AI experiments for teaching."
+version = "0.0.2"
+description = "Webapp for conversational AI. Logs prompts, responses, and log probabilities for each alternative token in a response."
 authors = [
     {name = "Hobson Lane", email = "git@totalgood.com"},
 ]
 license = {text = "GPLv3+"}
-# # Let setuptools read git tags or reit.__version__ attribute for the version number
+# # Let setuptools read git tags or problog.__version__ attribute for the version number
 # dynamic = ["version"]
 readme = "README.md"
 requires-python = ">=3.10"
@@ -60,14 +60,14 @@ test = ["pytest-coverage", "black", "twine", "pip", "build", "wheel"]
 all = ["test"]
 
 [project.scripts]
-reit = "reit.llm:chat"
+app = "problog.app:main"
 
 # ... other project metadata fields as listed in:
 #     https://packaging.python.org/en/latest/guides/writing-pyproject-toml/
 
 
 [tool.setuptools.package-data]
-reit = [
+problog = [
     "data/*",
 ]
 
