@@ -20,8 +20,13 @@ SYSTEM_PROMPT = (
 )
 
 
-def build_payload(prompt: str, api_key: str = TWINLY_AI_KEY, system_prompt: str = SYSTEM_PROMPT):
-    return {
+def build_payload(
+        prompt: str,
+        api_key: str = TWINLY_AI_KEY,
+        system_prompt: str = SYSTEM_PROMPT,
+        **kwargs,
+):
+    payload = {
         "api_key": api_key,
         "model": "gpt-4o",
         "messages": [
@@ -38,21 +43,25 @@ def build_payload(prompt: str, api_key: str = TWINLY_AI_KEY, system_prompt: str 
         "grounding_topics": GROUNDING_TOPICS,
         "context": "Custom context to ground the LLM's responses in"
     }
+    payload.update(kwargs)
+    return payload
 
 
 def ask_twinly(
         prompt: str,
         base_url: str = 'https://twinlyai-j2vtca5m4q-uw.a.run.app',
         endpoint: str = 'chat_response',
-        api_key=TWINLY_AI_KEY):
+        api_key=TWINLY_AI_KEY,
+        **kwargs
+):
+
     headers = {
         'User-Agent': 'Knowt (admin@totalgood.com)'
     }
     if api_key:
         headers['Authorization'] = f'Bearer {api_key}'
-    payload = build_payload(prompt)
+    payload = build_payload(prompt, api_key=api_key, **kwargs)
     base_url = 'https://api.wikimedia.org/core/v1/wikipedia/'
-    endpoint = '/search/page'
     url = '/'.join((base_url, endpoint)) + '/'
     response = requests.post(url, headers=headers, data=payload)
     return response
