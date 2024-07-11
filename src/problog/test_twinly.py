@@ -8,15 +8,12 @@ env = dict(os.environ)
 TWINLY_AI_KEY = env.get('TWINLY_AI_KEY')
 WIKIPEDIA_API_KEY = env.get('WIKIPEDIA_API_KEY')
 GROUNDING_TOPICS = [
-    "https://en.wikipedia.org/wiki/LLM",
-    "https://en.wikipedia.org/wiki/LLM_Lettering",
-    "https://en.wikipedia.org/wiki/Logic_learning_machine",
-    "https://en.wikipedia.org/wiki/Large_language_model",
+    "LLM", "LLM_Lettering", "Logic_learning_machine", "Large_language_model",
 ],
 
 SYSTEM_PROMPT = (
     "You are a helpful AI assistant. "
-    + "If you do not understand a question ask clarrifying questions or admit what you do not know."
+    + "If you do not understand a question, ask clarrifying questions or admit that you do not know the answer."
 )
 
 
@@ -58,8 +55,9 @@ def ask_twinly(
     headers = {
         'User-Agent': 'Knowt (admin@totalgood.com)'
     }
-    if api_key:
-        headers['Authorization'] = f'Bearer {api_key}'
+    # if api_key:
+    #     headers['Authorization'] = f'Bearer {api_key}'
+
     payload = build_payload(prompt, api_key=api_key, **kwargs)
     base_url = 'https://api.wikimedia.org/core/v1/wikipedia/'
     url = '/'.join((base_url, endpoint)) + '/'
