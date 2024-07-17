@@ -1,0 +1,15 @@
+jupyter
+ipython
+torch
+scikit-learn
+transformers
+openai
+panel
+gradio
+fastapi
+flask
+spacy
+llama-index
+pandas
+python-dotenv
+tastymap

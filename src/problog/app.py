@@ -228,6 +228,31 @@ class Graph():
         )
 
 
+async def generate_message(response):
+    message = ""
+    async for chunk in response:
+        choice = chunk.choices[0]
+        content = choice.delta.content
+        log_probs = choice.logprobs
+        log_choices(choice=choice)
+        if content and log_probs:
+            log_prob = log_probs.content[0].logprob
+            message += color_by_logprob(content, log_prob)
+            yield message
+
+
+def log_choices(choice, path=PRIVATE_DIR / 'choices.jsonlines'):
+    logprobs = choice.logprobs
+    token_probs = {}
+    # chosen_token_logprobs.append(logprobs.content[0].logprob)
+    token_probs[str(choice.delta.content)] = np.exp(logprobs.content[0].logprob)
+    if logprobs and len(logprobs.content):
+        for lp in logprobs.content[0].top_logprobs:
+            # to ensure chosen token remains first in the dict even if it is not most likely
+            if lp.token not in token_probs:
+                token_probs[lp.token] = np.exp(lp.logprob)
+
+
 async def generate_tokens(
         prompt: str,
         model: str = MODEL,
@@ -263,9 +288,9 @@ async def generate_tokens(
     async for chunk in response:
         data['responded'].append(datetime.now().isoformat())
         choice = chunk.choices[0]
-        chosen_token = str(choice.delta.content)
         if not choice.delta.content:
             continue
+        chosen_token = str(choice.delta.content)
         chosen_tokens.append(chosen_token)
         logprobs = choice.logprobs
         token_probs = {}
@@ -363,7 +388,7 @@ async def chat(
     return data
 
 
-def app():
+def runserver(show=True):
     async def respond_to_input(
             contents: str,
             user: str,
@@ -397,15 +422,16 @@ def app():
             seed=seed_input.value,
         )
         # stream response
-        message = ""
-        async for chunk in response:
-            choice = chunk.choices[0]
-            content = choice.delta.content
-            log_probs = choice.logprobs
-            if content and log_probs:
-                log_prob = log_probs.content[0].logprob
-                message += color_by_logprob(content, log_prob)
-                yield message
+        yield generate_message(response)
+        # async for chunk in response:
+        #     choice = chunk.choices[0]
+        #     content = choice.delta.content
+        #     log_probs = choice.logprobs
+        #     log_choices(choice=choice)
+        #     if content and log_probs:
+        #         log_prob = log_probs.content[0].logprob
+        #         message += color_by_logprob(content, log_prob)
+        #         yield message
 
     pn.extension()
     provider_pulldown = pn.widgets.Select(
@@ -466,12 +492,13 @@ def app():
         ),
         chat_interface,
     )
-    return page
+    if not show:
+        return page
+    return page.show()
 
 
 if __name__ == '__main__':
-    page = app()
-    page.show()
+    page = runserver(show=True)
     # ans = input('Launch a flask app (Y/[N]) ? ') + ' '
     # if (ans or ' ')[0].lower() == 'y':
     #     page.show()

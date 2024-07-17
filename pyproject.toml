@@ -60,7 +60,8 @@ test = ["pytest-coverage", "black", "twine", "pip", "build", "wheel"]
 all = ["test"]
 
 [project.scripts]
-app = "problog.app:main"
+app = "problog.app:runserver"
+ask = "problog.app:chat"
 
 # ... other project metadata fields as listed in:
 #     https://packaging.python.org/en/latest/guides/writing-pyproject-toml/
@@ -110,7 +111,7 @@ exclude = [
 ]
 line-length = 125  # black line-length=88
 indent-width = 4
-target-version = "py39"
+target-version = "py310"
 
 [tool.ruff.lint]
 # Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`)  codes by default.
