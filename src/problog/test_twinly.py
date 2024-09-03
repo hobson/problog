@@ -86,5 +86,5 @@ def search_wikipedia(
 
 if __name__ == '__main__':
     prompt = "Are LLMs capable of common sense reasoning?"
-    response = ask_twinly(prompt)
+    response = ask_twinly(prompt=prompt)
     print(response)

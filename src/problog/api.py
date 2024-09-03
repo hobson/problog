@@ -25,7 +25,7 @@ endpoints = dict(
     ),
 )
 
-LLM_API_KEY, LLM_API_FQDN, LLM_API_PATH = endpoints['openai'].values()
+LLM_API_KEY, LLM_API_FQDN, LLM_API_PATH = list(endpoints['openai'].values())[:3]
 # print(f'key: {LLM_API_KEY[:3]}...{LLM_API_KEY[-2:]}')
 
 
