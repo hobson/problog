@@ -1,7 +1,16 @@
+# CoT reasoning project (problog webapp) 
+
+### Meeting notes
+
+See notes: [problog/docs/chain-of-thought-reasoning-large-numbers.md](https://github.com/hobson/problog/blob/main/docs/chain-of-thought-reasoning-large-numbers.md)
+
+### References
+
 #### longer math word problems
 https://arxiv.org/pdf/2405.14804
 Repository missing: https://github.com/XinXU-USTC/CoLeG-Math 
-- extended math word problem dataset used llms to extend context length, cheating
+- extended math word problem dataset used llms to extend context length
+- favorable results seem to rely on cheating (data leakage)
 
 #### cumulative reasoning
  https://arxiv.org/pdf/2308.04371
