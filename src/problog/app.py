@@ -411,6 +411,15 @@ def runserver(show=True):
             messages += instance.serialize(custom_serializer=custom_serializer)
         else:
             messages.append({"role": "user", "content": contents})
+        print(dict(
+            model=model_selector.value,
+            messages=messages,
+            stream=True,
+            logprobs=True,
+            temperature=temperature_input.value,
+            max_tokens=max_tokens_input.value,
+            seed=seed_input.value)
+        )
         # call API
         response = await aclient.chat.completions.create(
             model=model_selector.value,
