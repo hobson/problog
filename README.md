@@ -34,14 +34,32 @@ This should open a browser tab where you can enter your prompt/message into the 
 - [ ] Vish: Create a function for that one word problem that can generate an infinite number of different word problems from one template
 
 ### Week 2
-- [ ] Faz: Fix problog webapp so that extraneous text isn't recorded or displayed. E.g. no "1 2 3 4 5 ..." at beginning of response
+- [x] Faz: Fix problog webapp so that extraneous text isn't recorded or displayed. E.g. no "1 2 3 4 5 ..." at beginning of response
 - [ ] Faz: Add logging of questions and responses and logprobabilities on backend (python) and save it to disk or in a database
+   - [ ] use jsonlines format to persist conversaion JSON to disk
+   - [ ] store json payloads sent to LLM
+   - [ ] store json payloads received from LLMs
+   - [ ] add timestamp if there isn't one in the json dictionary already
 - [ ] Faz: Document all the steps required to install and run your React/Next/Flask app and put those steps in this README above 
 - [ ] Hobs: Draft a "background" section and abstract for the academic paper
 - [ ] Hobs: Draft slides for Oct 12 dinner seminar for Gary Cottrell and the UCSD RET project
 - [ ] Hobs: Attempt to get async flask app working again by moving api.py functions back into app.py 
-- [ ] Vish: Parameterize one GSM8k problem using variable names N_00 ... N_99 to create a [yaml record](docs/chain-of-thought-reasoning-large-numbers.md#Example-parameterized-GSM8k-problem) for at least one problem
-- [ ] Vish: Create f-string template that can be used to generate multiple questions and answers
-- [ ] Vish: Create a function for that one word problem that can generate an infinite number of different word problems from one template
+- [x] Vish: Parameterize one GSM8k problem using variable names N_00 ... N_99 to create a [yaml record](docs/chain-of-thought-reasoning-large-numbers.md#Example-parameterized-GSM8k-problem) for at least one problem
+- [x] Vish: Create f-string template that can be used to generate multiple questions and answers
+- [x] Vish: Create a function for that one word problem that can generate an infinite number of different word problems from one template
+
+### Week 2.5
+- [ ] Faz: Add logging of questions and responses and logprobabilities on backend (python) and save it to disk or in a database
+   - [ ] use jsonlines format to persist conversaion JSON to disk
+   - [ ] store json payloads sent to LLM
+   - [ ] store json payloads received from LLMs
+   - [ ] add timestamp if there isn't one in the json dictionary already
+- [ ] Faz: Document all the steps required to install and run your React/Next/Flask app and put those steps in this README above 
+- [ ] Hobs: Draft a "background" section and abstract for the academic paper
+- [ ] Hobs: Draft slides for Oct 12 dinner seminar for Gary Cottrell and the UCSD RET project
+- [ ] Hobs: Attempt to get async flask app working again by moving api.py functions back into app.py 
+- [ ] Vish: Parameterize the word ten and subsitute the digits 10 for the baseline question
+- [ ] Vish: Manually test 3 of the GSM Templates 10
+- [ ] Vish: Automate the testing and evaluation using all 10 templates
 
 See [docs/chain-of-thought-reasoning-large-numbers.md](docs/chain-of-thought-reasoning-large-numbers.md) for notes on state of the art in math word problem solving with LLMs.
