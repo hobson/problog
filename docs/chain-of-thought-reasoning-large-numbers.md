@@ -1,14 +1,78 @@
 # CoT reasoning project (problog webapp) 
 
+## Draft paper
+### Abstract
+### Contributions
+- Parameterized GSM8k dataset
+- evaluation of open source and proprietary LLMs on large number math word problems 
+  - approx num of MWP in training set
+  - diversity of MWPs in training set
+- programmatic generation of MWPs with
+  - parameterized numbers and formulae required to solve the problem (a.la Tiny-GSM)
+  - arbitrarily large number word problems
+  - arbitrary named entity references and pronouns
+- programmatic generation of difficulty-scaled MWPs
+  - number of words, characters, digits, sentences, numbers, BPE tokens (question and answer)
+  - average character-length of sentences
+  - number of parts of speech
+  - reading grade level score
+  - number of conjunctions and conditions and negations and other POS labels
+  - scaled difficulty of numerical values
+    - magnitude of numerical values
+    - LLM accuracy rate weighted by size and how many MWPs in training set and whether finetuned for MWP
+    - int vs rational number vs irrational numbers in question and/or answer
+    - fractions utilized in MWP question
+    - floating point or rational number values in MWP answer
+  - familiarity and simplicity of numercial values:
+      - divisible by 2
+      - divisible by 10
+      - divisible by 5
+      - divisible by 3
+      - divisible by 12 (specific to Western culture?)
+      - cumsum([x // i == x / i for i in [2, 10, 100, 1000, 5, 3, 12, 9, 11, 7, 13])
+      - cumsum([log(x, i) == int(log(x, i)) for i in [2, 10, 5, 3]]) # enumerate and 
+      - number of integer digits in question and answer
+  - minimum number of arithmetic operations required
+    
+  - bers
+  - 
+- MWP CoT reasoning evaluation metric
+  - POS pattern similarity
+  - numerical value similarity
+  - ? logical pattern equivalence 
+- programmatic generation of distractor noun and verb phrases for MWP training set data augmentation
+- programmatic generation of culturally diverse proper nouns
+- programmatic generation of culturally robust pronouns
+
 ### Meeting notes
 
 See notes: [problog/docs/chain-of-thought-reasoning-large-numbers.md](https://github.com/hobson/problog/blob/main/docs/chain-of-thought-reasoning-large-numbers.md)
 
 ### References
 
-#### longer math word problems
-https://arxiv.org/pdf/2405.14804
-Repository missing: https://github.com/XinXU-USTC/CoLeG-Math 
+#### longer math word problems (E-GSM)
+```yaml
+- 
+  paper: https://arxiv.org/pdf/2405.14804
+  code: https://github.com/XinXU-USTC/CoLeG-Math (code is missing)
+  summary: Context Length Generalizability (CoLeG) metric for evaluating LLM ability to solve long MWPs
+  questions:
+    - leakage? augmented dataset finetunes the LLM on long-context word problems
+  contributions:
+    - E-GSM dataset (longer GSM MWPs) - extension as an auxiliary task to fine-tune open source LLMs and release our fine-tuning dataset comprising 65K CoT data.
+    - Experiment results for proprietary and open-source LLMs showing reasoning affected by context length
+    - "Condition-Retrieving (CoRe) instructional prompt -- 'Let’s first understand the problem, then list all the known conditions which are formed by numbers or quantitative relationships along with their contexts from problem text, and identify the final goal of the problem. { Other prompting method }'"
+    - 
+
+4. CoRe and extension have demonstrated their strong generalization on several MWP benchmarks.
+    - LLM evaluation metric and benchmark dataset for solving long MWPs
+    - instructional prompt for using proprietary LLMs to solve long MWPs
+    - data augmentation task approach for long MWP
+  questions:
+    - is there datais developed to improve CoLeG. Our comprehensive results demonstrate the effectiveness of our proposed methods, showing not only improved performance on E-GSM but also generalizability across several other MWP benchmarks. Our findings pave the way for future research in employing LLMs for complex, real-world applications, offering practical solutions to current limitations and opening avenues for further exploration of model generalizability and training methodologies. 
+
+Related code: https://github.com/XinXU-USTC/R2PE
+Repository missing:  
 - extended math word problem dataset used llms to extend context length
 - favorable results seem to rely on cheating (data leakage)
 
