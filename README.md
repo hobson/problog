@@ -55,7 +55,7 @@ This should open a browser tab where you can enter your prompt/message into the 
    - [ ] store json payloads received from LLMs
    - [ ] add timestamp if there isn't one in the json dictionary already
 - [ ] Faz: Document all the steps required to install and run your React/Next/Flask app and put those steps in this README above 
-- [ ] Hobs: Draft a "background" section and abstract for the academic paper
+- [x] Hobs: Draft a "background" section and abstract for the academic paper
 - [ ] Hobs: Draft slides for Oct 12 dinner seminar for Gary Cottrell and the UCSD RET project
 - [ ] Hobs: Attempt to get async flask app working again by moving api.py functions back into app.py 
 - [ ] Vish: Parameterize the word ten and subsitute the digits 10 for the baseline question
