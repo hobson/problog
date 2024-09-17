@@ -1,7 +1,32 @@
 # CoT reasoning project (problog webapp) 
 
 ## Draft paper
+
 ### Abstract
+
+Early on in LLM development, the emergence of LLM reasoning ability at larger language model sizes was hypothesized and evaluated, without consensus among researchers at institutions responsible for the largest LLM providers. 
+LLM reasoning ability has been shown to be error prone and math word problems (MWP) provide a useful benchmark for detecting these errors by evaluating the generation of step-by-step reasoning explanations.
+However the limited numerical range, logic diversity, and range of difficulty (for human problem solvers) in MWP datasets, limit the conclusions that can be drawn from evaluation on MWP datasets 
+We also found that some benchmark datasets, such as GSM8k, contain errors in their reasoning explanations that can cin both the training and 
+several approaches have achieved significant improvements in MATH reasoning ability
+
+### References
+- [arXiv:2405.15092](https://arxiv.org/abs/2405.15092)
+  - Dissociation of Faithful and Unfaithful Reasoning in LLMs
+  - Authors: [Evelyn Yee](https://arxiv.org/search/?searchtype=author&query=Yee%2C+E), [Alice Li](https://arxiv.org/search/?searchtype=author&query=Li%2C+A), [Chenyu Tang](https://arxiv.org/search/?searchtype=author&query=Tang%2C+C), [Yeon Ho Jung](https://arxiv.org/search/?searchtype=author&query=Jung%2C+Y+H), [Ramamohan Paturi](https://arxiv.org/search/?searchtype=author&query=Paturi%2C+R), [Leon Bergen](https://arxiv.org/search/?searchtype=author&query=Bergen%2C+L)
+  - Sep 2024
+- [arXiv:2304.15004](https://arxiv.org/abs/2304.15004)
+  - Are Emergent Abilities of Large Language Models a Mirage?
+  - Authors: [Rylan Schaeffer](https://arxiv.org/search/?searchtype=author&query=Schaeffer%2C+R), [Brando Miranda](https://arxiv.org/search/?searchtype=author&query=Miranda%2C+B), [Sanmi Koyejo](https://arxiv.org/search/?searchtype=author&query=Koyejo%2C+S)
+  - May 2023
+- [arXiv:2409.03563](https://arxiv.org/pdf/2409.03563)
+  - 100 instances is all you need: predicting the success of a new LLM on unseen data by testing on a few instances
+  - Authors: [Lorenzo Pacchiardi](https://arxiv.org/search/?searchtype=author&query=Pacchiardi%2C+L), [Lucy G. Cheke](https://arxiv.org/search/?searchtype=author&query=Cheke%2C+L+G), [José Hernández-Orallo](https://arxiv.org/search/?searchtype=author&query=Hern%C3%A1ndez-Orallo%2C+J)
+  - Sep 2024
+- [arXiv:2409.06173](https://arxiv.org/abs/2409.06173)
+  - Larger Language Models Don't Care How You Think: Why Chain-of-Thought Prompting Fails in Subjective Tasks
+  - Authors: [Georgios Chochlakis](https://arxiv.org/search/?searchtype=author&query=Chochlakis%2C+G), [Niyantha Maruthu Pandiyan](https://arxiv.org/search/?searchtype=author&query=Pandiyan%2C+N+M), [Kristina Lerman](https://arxiv.org/search/?searchtype=author&query=Lerman%2C+K), [Shrikanth Narayanan](https://arxiv.org/search/?searchtype=author&query=Narayanan%2C+S)
+
 ### Contributions
 - Parameterized GSM8k dataset
 - evaluation of open source and proprietary LLMs on large number math word problems 
@@ -51,33 +76,49 @@ See notes: [problog/docs/chain-of-thought-reasoning-large-numbers.md](https://gi
 ### References
 
 #### longer math word problems (E-GSM)
-```yaml
-- 
-  paper: https://arxiv.org/pdf/2405.14804
-  code: https://github.com/XinXU-USTC/CoLeG-Math (code is missing)
-  summary: Context Length Generalizability (CoLeG) metric for evaluating LLM ability to solve long MWPs
-  questions:
+- [arXiv:2405.14804](https://arxiv.org/abs/2405.14804)
+  - Can LLMs Solve longer Math Word Problems Better?
+  - Authors: [Xin Xu](https://arxiv.org/search/?searchtype=author&query=Xu%2C+X), [Tong Xiao](https://arxiv.org/search/?searchtype=author&query=Xiao%2C+T), [Zitong Chao](https://arxiv.org/search/?searchtype=author&query=Chao%2C+Z), [Zhenya Huang](https://arxiv.org/search/?searchtype=author&query=Huang%2C+Z), [Can Yang](https://arxiv.org/search/?searchtype=author&query=Yang%2C+C), [Yang Wang](https://arxiv.org/search/?searchtype=author&query=Wang%2C+Y)
+  - notes
+    Context Length Generalizability (CoLeG) metric for evaluating LLM ability to solve long MWPs
+  questions
+    - https://github.com/XinXU-USTC/CoLeG-Math (code is missing)
     - leakage? augmented dataset finetunes the LLM on long-context word problems
   contributions:
     - E-GSM dataset (longer GSM MWPs) - extension as an auxiliary task to fine-tune open source LLMs and release our fine-tuning dataset comprising 65K CoT data.
     - Experiment results for proprietary and open-source LLMs showing reasoning affected by context length
     - "Condition-Retrieving (CoRe) instructional prompt -- 'Let’s first understand the problem, then list all the known conditions which are formed by numbers or quantitative relationships along with their contexts from problem text, and identify the final goal of the problem. { Other prompting method }'"
-    - 
-
-4. CoRe and extension have demonstrated their strong generalization on several MWP benchmarks.
+      - notes
+    - Related code: https://github.com/XinXU-USTC/R2PE
+    - Repository missing:  
+      - extended math word problem dataset used llms to extend context length
+      - favorable results seem to rely on cheating (data leakage)
+    - CoRe and extension have demonstrated their strong generalization on several MWP benchmarks.
     - LLM evaluation metric and benchmark dataset for solving long MWPs
     - instructional prompt for using proprietary LLMs to solve long MWPs
     - data augmentation task approach for long MWP
-  questions:
-    - is there datais developed to improve CoLeG. Our comprehensive results demonstrate the effectiveness of our proposed methods, showing not only improved performance on E-GSM but also generalizability across several other MWP benchmarks. Our findings pave the way for future research in employing LLMs for complex, real-world applications, offering practical solutions to current limitations and opening avenues for further exploration of model generalizability and training methodologies. 
+  - questions:
+      - is there data is developed to improve CoLeG. Our comprehensive results demonstrate the effectiveness of our proposed methods, showing not only improved performance on E-GSM but also generalizability across several other MWP benchmarks. Our findings pave the way for future research in employing LLMs for complex, real-world applications, offering practical solutions to current limitations and opening avenues for further exploration of model generalizability and training methodologies. 
+- [arXiv:2405.15092](https://arxiv.org/abs/2405.15092)
+  - Dissociation of Faithful and Unfaithful Reasoning in LLMs
+  - Authors: [Evelyn Yee](https://arxiv.org/search/?searchtype=author&query=Yee%2C+E), [Alice Li](https://arxiv.org/search/?searchtype=author&query=Li%2C+A), [Chenyu Tang](https://arxiv.org/search/?searchtype=author&query=Tang%2C+C), [Yeon Ho Jung](https://arxiv.org/search/?searchtype=author&query=Jung%2C+Y+H), [Ramamohan Paturi](https://arxiv.org/search/?searchtype=author&query=Paturi%2C+R), [Leon Bergen](https://arxiv.org/search/?searchtype=author&query=Bergen%2C+L)
+  - Sep 2024
+- [arXiv:2304.15004](https://arxiv.org/abs/2304.15004)
+  - Are Emergent Abilities of Large Language Models a Mirage?
+  - Authors: [Rylan Schaeffer](https://arxiv.org/search/?searchtype=author&query=Schaeffer%2C+R), [Brando Miranda](https://arxiv.org/search/?searchtype=author&query=Miranda%2C+B), [Sanmi Koyejo](https://arxiv.org/search/?searchtype=author&query=Koyejo%2C+S)
+  - May 2023
+- [arXiv:2409.03563](https://arxiv.org/pdf/2409.03563)
+  - 100 instances is all you need: predicting the success of a new LLM on unseen data by testing on a few instances
+  - Authors: [Lorenzo Pacchiardi](https://arxiv.org/search/?searchtype=author&query=Pacchiardi%2C+L), [Lucy G. Cheke](https://arxiv.org/search/?searchtype=author&query=Cheke%2C+L+G), [José Hernández-Orallo](https://arxiv.org/search/?searchtype=author&query=Hern%C3%A1ndez-Orallo%2C+J)
+  - Sep 2024
+- [arXiv:2409.06173](https://arxiv.org/abs/2409.06173)
+  - Larger Language Models Don't Care How You Think: Why Chain-of-Thought Prompting Fails in Subjective Tasks
+  - Authors: [Georgios Chochlakis](https://arxiv.org/search/?searchtype=author&query=Chochlakis%2C+G), [Niyantha Maruthu Pandiyan](https://arxiv.org/search/?searchtype=author&query=Pandiyan%2C+N+M), [Kristina Lerman](https://arxiv.org/search/?searchtype=author&query=Lerman%2C+K), [Shrikanth Narayanan](https://arxiv.org/search/?searchtype=author&query=Narayanan%2C+S)
 
-Related code: https://github.com/XinXU-USTC/R2PE
-Repository missing:  
-- extended math word problem dataset used llms to extend context length
-- favorable results seem to rely on cheating (data leakage)
+## More papers to catalog
 
 #### cumulative reasoning
- https://arxiv.org/pdf/2308.04371
+https://arxiv.org/pdf/2308.04371
 
 https://github.com/XinXU-USTC/cumulative-reasoning
 
