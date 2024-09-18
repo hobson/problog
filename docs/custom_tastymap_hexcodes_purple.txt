@@ -1,0 +1,11 @@
+#00ffe6
+#00bcff
+#0081ff
+#0045ff
+#1a00ff
+#7c00ff
+#e000ff
+#ff00ce
+#ff0092
+#ff005b
+#ff0019
