@@ -21,12 +21,19 @@ endpoints = dict(
     togetherai=dict(
         key=os.environ.get("TOGETHER_AI_KEY"),
         domain="together.ai",
-        path="api/v1"
+        path="api/v1",
+        models=['gpt-3.5-turbo'],
     ),
 )
 
-LLM_API_KEY, LLM_API_FQDN, LLM_API_PATH = list(endpoints['openai'].values())[:3]
-# print(f'key: {LLM_API_KEY[:3]}...{LLM_API_KEY[-2:]}')
+LLM_API_KEY, LLM_API_FQDN, LLM_API_PATH, LLM_MODELS = list(endpoints['openai'].values())[:4]
+
+
+def print_endpoints_env(endpoints=endpoints):
+    """ Print environment variables needed for aider and other LLM-based apps """
+    for k, ep in endpoints.items():
+        print(f'{k.upper()}_API_KEY={ep["key"]}')
+        print(f'{k.upper()}_BASE_URL={ep["domain"]}/ep["path"]')
 
 
 def get_model_choices(provider=None):

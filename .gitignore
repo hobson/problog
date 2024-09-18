@@ -129,3 +129,4 @@ docs/**/*.html
 
 # frontend (js)
 **/node_modules
+.aider*
