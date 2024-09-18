@@ -1,6 +1,6 @@
 # Prob Log
 
-Tools for probing the reasoning ability of LLMs.
+Tools for probing the reasoning ability of LLMs and logging the problogs (log probabilties) of generated tokens as well as alternatives.
 
 - web interface to interact with multiple free LLMs at different LLM providers (open router, OpenAI, anyscale?)
 - display probabilities of individual tokens using color scale
