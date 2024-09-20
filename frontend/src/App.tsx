@@ -1,13 +1,16 @@
 import React from 'react';
-import { Stack } from '@mui/material';
-import { Chat, Topbar } from './components';
+import Home from './pages/Home';
+import Conversations from './pages/Conversations';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
 
 const App: React.FC = () => {
   return (
-    <Stack sx={{ height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-      <Topbar />
-      <Chat />
-    </Stack>
+    <BrowserRouter>
+      <Routes>
+        <Route path='/' element={<Home />} />
+        <Route path='/conversations' element={<Conversations />} />
+      </Routes>
+    </BrowserRouter>
   );
 };
 

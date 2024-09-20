@@ -1,35 +1,27 @@
 import React, { useEffect, useRef, useState } from 'react';
 import DOMPurify from 'dompurify';
-import Controller from './Conroller';
-import { initialColorContent } from './data';
+import ForumIcon from '@mui/icons-material/Forum';
 import SendIcon from '@mui/icons-material/Send';
 import MenuIcon from '@mui/icons-material/Menu';
-import RestartAltIcon from '@mui/icons-material/RestartAlt';
-import { Box, TextField, IconButton, Typography, Drawer } from '@mui/material';
+import { Box, TextField, IconButton, Typography, Drawer, Dialog, DialogTitle, DialogContent, DialogActions, Button } from '@mui/material';
 import { chatBox, chatContainer, controllerContainer, drawer, form, menu, MessageBubble, messageContainer, messageText, sendIcon } from './Styles';
+import Controller from './Conroller';
 
 const Chat: React.FC = () => {
-
-  const [messages, setMessages] = useState<{ role: string; content: any }[]>([
-    // { role: 'user', content: 'Tell me about San Francisco!' },
-    // { role: 'system', content: "San Francisco is a major city in California, located on the west coast of the United States. It is known for its iconic landmarks such as the Golden Gate Bridge, Alcatraz Island, and Fisherman's Wharf. The city is also famous for its hilly terrain, Victorian architecture, diverse culture, and thriving tech industry. San Francisco is home to many popular attractions, including Chinatown, the historic cable cars, and the bustling Union Square shopping district. The city is also known for its progressive values, vibrant arts scene, and delicious food offerings." }
-  ]);
-
-  const [colorMessages, setColorMessages] = useState<any>([
-    // { role: 'user', content: 'Tell me about San Francisco!' },
-    // {
-    //   role: 'system',
-    //   content: initialColorContent,
-    // }
-  ]);
-
+  const [messages, setMessages] = useState<{ role: string; content: any }[]>([]);
+  const [colorMessages, setColorMessages] = useState<any>([]);
   const [sent, setSent] = useState(false);
-  const [newMessage, setNewMessage] = useState('');
-  const [drawerOpen, setDrawerOpen] = useState(false);
   const [maxTokens, setMaxTokens] = useState(100);
-  const [systemPrompt, setSystemPrompt] = useState('You are an AI assistant.');
-  const [model, setModel] = useState('gpt-3.5-turbo');
+  const [newMessage, setNewMessage] = useState('');
   const [provider, setProvider] = useState('openai');
+  const [model, setModel] = useState('gpt-3.5-turbo');
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [systemPrompt, setSystemPrompt] = useState('You are an AI assistant.');
+  const [conversationId, setConversationId] = useState<string | null>(null);
+
+  // New state for controlling the reset confirmation dialog
+  const [resetDialogOpen, setResetDialogOpen] = useState(false);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
@@ -41,104 +33,178 @@ const Chat: React.FC = () => {
     scrollToBottom();
   }, [messages]);
 
-  // GET ALL MESSAGES
   useEffect(() => {
-    const fetchMessages = async () => {
-      try {
-        const response = await fetch('http://127.0.0.1:5000/messages');
-        const data = await response.json();
-        setMessages(data.messages || []);
-        setColorMessages(data.colorMessages || []);
-      } catch (error) {
-        console.error('Error fetching messages:', error);
-      }
-    };
-    fetchMessages();
+    const storedConversationId = localStorage.getItem('conversationId');
+
+    if (!storedConversationId) {
+      createNewConversation();
+    } else {
+      fetchMessages(storedConversationId);
+    }
   }, []);
 
-  // SEND MESSAGES!
+  const fetchMessages = async (convId: string) => {
+    try {
+      const response = await fetch(`http://127.0.0.1:5000/messages?conversationId=${convId}`);
 
+      if (response.status === 404) { createNewConversation(); return; }
+      if (!response.ok) throw new Error('Failed to fetch messages');
+
+      const data = await response.json();
+      setMessages(data.messages || []);
+      setColorMessages(data.colorMessages || []);
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+    }
+  };
+
+  const createNewConversation = async () => {
+    try {
+      const response = await fetch('http://127.0.0.1:5000/conversations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) throw new Error('Failed to create conversation');
+
+      const data = await response.json();
+      const newConvId = data.conversationId;
+
+      setConversationId(newConvId);
+      localStorage.setItem('conversationId', newConvId);
+      fetchMessages(newConvId);
+
+    } catch (error) {
+      console.error('Error creating new conversation:', error);
+    }
+  };
+
+  // SEND MESSAGES
   const handleSendMessage = async () => {
     if (newMessage.trim() === "") return;
-    setSent(true)
-    if (newMessage.trim()) {
-      const userMessage = { role: 'user', content: newMessage };
-      const updatedMessages = [...messages, userMessage];
-      setNewMessage('');
-      setMessages(updatedMessages);
-      setColorMessages([...colorMessages, userMessage]);
-      console.log("UPDATED MESSAGE =>", updatedMessages)
+    setSent(true);
 
-      try {
-        const response = await fetch('http://127.0.0.1:5000/chat', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            provider,
-            model,
-            system_prompt: systemPrompt,
-            messages: updatedMessages
-          })
-        });
+    const userMessage = { role: 'user', content: newMessage };
+    const updatedMessages = [...messages, userMessage];
+    setNewMessage('');
+    setMessages(updatedMessages);
+    setColorMessages([...colorMessages, userMessage]);
+    const storedConversationId = localStorage.getItem('conversationId');
 
-        const data = await response.json();
-        setMessages((prevMessages) => [
-          ...prevMessages,
-          { role: 'system', content: data.content }
-        ]);
+    try {
+      const response = await fetch('http://127.0.0.1:5000/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          provider,
+          model,
+          system_prompt: systemPrompt,
+          messages: updatedMessages,
+          conversationId: storedConversationId,
+        }),
+      });
 
-        setColorMessages((prevColorMessages: any) => [
-          ...prevColorMessages,
-          { role: 'system', content: data.colorContent }
-        ]);
-        setSent(false)
-      } catch (error) {
-        setSent(false)
-        console.error('Error sending message:', error);
-      }
+      const data = await response.json();
+      console.log("This is data from bot:", data)
+      setMessages((prevMessages) => [
+        ...prevMessages,
+        { role: 'system', content: data.chat_response.content },
+      ]);
+      setColorMessages((prevColorMessages: any) => [
+        ...prevColorMessages,
+        { role: 'system', colorContent: data.chat_response.colorContent },
+      ]);
+      setSent(false);
+
+      console.log(JSON.stringify(data.chat_response?.colorContent));
+    } catch (error) {
+      setSent(false);
+      console.error('Error sending message:', error);
     }
+  };
+
+  // Open reset confirmation dialog
+  const handleOpenResetDialog = () => {
+    setResetDialogOpen(true);
+  };
+
+  // Close reset confirmation dialog
+  const handleCloseResetDialog = () => {
+    setResetDialogOpen(false);
   };
 
   // RESET MESSAGES
   const handleReset = async () => {
+    const storedConversationId = localStorage.getItem('conversationId');
+  
+    if (!storedConversationId) return;
+  
     try {
-      await fetch('http://127.0.0.1:5000/reset', {
-        method: 'POST'
+      const response = await fetch('http://127.0.0.1:5000/reset', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ conversationId: storedConversationId }),
       });
+      setResetDialogOpen(false);
+      const data = await response.json();
       setMessages([]);
       setColorMessages([]);
+      setConversationId(data.conversation._id);
     } catch (error) {
       console.error('Error resetting messages:', error);
     }
   };
 
 
+  // CREATE NEW CONVERSATION
+  // Open create confirmation dialog
+  const handleOpenCreateDialog = () => {
+    setCreateDialogOpen(true);
+  };
+
+  // Close create confirmation dialog
+  const handleCloseCreateDialog = () => {
+    setCreateDialogOpen(false);
+  };
+  
+
   return (
     <Box sx={chatContainer}>
       <Box sx={chatBox}>
-        <Box sx={messageContainer}>
-          {colorMessages.map((message: any, index: number) => (
-            <MessageBubble key={index} isuser={message.role === 'user'}>
-              {message.role === 'system' ? (
-                <div style={{ display: "flex" }}>
-                  <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(message.content) }} />
-                </div>
-              ) : (
-                <Typography sx={messageText} variant="body1">
-                  {message.content}
-                </Typography>
-              )}
-            </MessageBubble>
-          ))}
-          {sent ? (
-            <Typography sx={{ fontFamily: 'Dosis' }}>
-              Typing...
-            </Typography>
-          ) : null}
-          <div ref={messagesEndRef} />
-        </Box>
+        {colorMessages.length > 0 ? (
+          <Box sx={messageContainer}>
+            {colorMessages.map((message: any, index: number) => (
+              <MessageBubble key={index} isuser={message.role === 'user' ? true : false}>
+                {message.role === 'system' ? (
+                  <div style={{ display: "flex" }}>
+                    <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(message.colorContent) }} />
+                  </div>
+                ) : (
+                  <Typography sx={messageText} variant="body1">
+                    {message.content}
+                  </Typography>
+                )}
+              </MessageBubble>
+            ))}
+            {sent ? (
+              <Typography sx={{ fontFamily: 'Dosis' }}>
+                Typing...
+              </Typography>
+            ) : null}
+            <div ref={messagesEndRef} />
+          </Box>
+        ) : (
+          <Box sx={{ display: 'flex', flexDirection: "column", justifyContent: "center", alignItems: "center", width: '100%', height: '100%' }}>
+            <ForumIcon sx={{ fontSize: 100, color: '#DDD' }} />
+            <Typography sx={{ fontFamily: 'Dosis', fontWeight: 500, color: '#888' }}>Conversation is empty. Start chatting!</Typography>
+          </Box>
+        )}
 
         <Box sx={form}>
           <TextField
@@ -152,9 +218,6 @@ const Chat: React.FC = () => {
             }}
           />
           <IconButton color="primary" sx={sendIcon}>
-            {/* <IconButton> */}
-              <RestartAltIcon onClick={handleReset} sx={{ fontSize: 30 }} />
-            {/* </IconButton> */}
             <SendIcon onClick={handleSendMessage} sx={{ fontSize: 30 }} />
           </IconButton>
         </Box>
@@ -170,6 +233,8 @@ const Chat: React.FC = () => {
           setMaxTokens={setMaxTokens}
           systemPrompt={systemPrompt}
           setSystemPrompt={setSystemPrompt}
+          handleOpenResetDialog={handleOpenResetDialog}
+          createNewConversation={handleOpenCreateDialog}
         />
       </Box>
 
@@ -184,13 +249,39 @@ const Chat: React.FC = () => {
             setMaxTokens={setMaxTokens}
             systemPrompt={systemPrompt}
             setSystemPrompt={setSystemPrompt}
+            handleOpenResetDialog={handleOpenResetDialog}
+            createNewConversation={handleOpenCreateDialog}
           />
         </Box>
       </Drawer>
 
       <IconButton sx={menu} onClick={() => setDrawerOpen(true)}>
-        <MenuIcon />
+        <MenuIcon sx={{ color: '#FFF' }} />
       </IconButton>
+
+      {/* Reset Confirmation Dialog */}
+      <Dialog open={resetDialogOpen} onClose={handleCloseResetDialog}>
+        <DialogTitle>Reset Conversation</DialogTitle>
+        <DialogContent>
+          <Typography>Are you sure you want to reset the conversation? This action cannot be undone.</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleReset} color="primary">Yes, Reset</Button>
+          <Button onClick={handleCloseResetDialog} color="secondary">Cancel</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Reset Confirmation Dialog */}
+      <Dialog open={createDialogOpen} onClose={handleCloseCreateDialog}>
+        <DialogTitle>Create New Conversation</DialogTitle>
+        <DialogContent>
+          <Typography>Are you sure you want to create new conversation!?</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={createNewConversation} color="primary">Yes, Reset</Button>
+          <Button onClick={handleCloseCreateDialog} color="secondary">Cancel</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
