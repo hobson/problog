@@ -1,7 +1,9 @@
 import React from 'react';
 import { colors } from './data';
 import ColorDiagram from '../ColorDiagram';
-import { Box, TextField, Typography, Slider, Select, MenuItem, Paper } from '@mui/material';
+import RestartAltIcon from '@mui/icons-material/RestartAlt';
+import { Box, TextField, Typography, Slider, Select, MenuItem, Paper, Button } from '@mui/material';
+import { Link } from 'react-router-dom';
 
 const Controller: React.FC<{
     maxTokens: number;
@@ -12,7 +14,9 @@ const Controller: React.FC<{
     setModel: (value: string) => void;
     provider: string, 
     setProvider: (value: string) => void;
-}> = ({ maxTokens, setMaxTokens, systemPrompt, setSystemPrompt, model, setModel, provider, setProvider }) => {
+    handleOpenResetDialog: any;
+    createNewConversation: any;
+}> = ({ maxTokens, setMaxTokens, systemPrompt, setSystemPrompt, model, setModel, provider, setProvider, handleOpenResetDialog, createNewConversation }) => {
     return (
         <Paper 
             sx={{ 
@@ -32,6 +36,20 @@ const Controller: React.FC<{
                     True values represent the scale of probabilities.
                 </Typography>
                 <ColorDiagram colors={colors} />
+                
+                <Box>
+                    <Link to={"/conversations"}>
+                        <Button fullWidth variant='outlined' sx={{my: 1, fontFamily: 'Dosis'}}>
+                            All Conversations
+                        </Button>
+                    </Link>
+                    <Button onClick={handleOpenResetDialog} fullWidth variant='outlined' sx={{my: 1, fontFamily: 'Dosis'}}>
+                        Reset Conversation <RestartAltIcon sx={{ fontSize: 20 }} />
+                    </Button>
+                    <Button onClick={createNewConversation} fullWidth variant='outlined' sx={{my: 1, fontFamily: 'Dosis'}}>
+                        Create new Conversation +
+                    </Button>
+                </Box>
                 
                 <Box sx={{ my: 3 }}>
                     <Typography variant="h6" sx={{ fontFamily: 'Dosis', color: '#2c3e50', mb: 1 }}>
