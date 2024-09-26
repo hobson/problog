@@ -7,7 +7,7 @@ import { Box, TextField, IconButton, Typography, Drawer, Dialog, DialogTitle, Di
 import { chatBox, chatContainer, controllerContainer, drawer, form, menu, MessageBubble, messageContainer, messageText, sendIcon } from './Styles';
 import Controller from './Conroller';
 
-const BASE_URL = "http://127.0.0.1:5000";
+const BASE_URL = "http://172.235.53.175:5000";
 
 const Chat: React.FC = () => {
   const [messages, setMessages] = useState<{ role: string; content: any }[]>([]);
