@@ -16,8 +16,25 @@ pip install virtualenv
 python -m virtualenv .venv
 source .venv/bin/activate
 pip install -e .
+```
+
+## Launch
+
+Launch the backend Flask app in one terminal window.
+
+#### Launch app.py
+```bash
 python src/logprob/app.py
 ```
+
+In another terminal launch the React dev server using vite.
+
+#### Launch frontend server
+```bash
+npm install
+npm run dev
+```
+
 
 This should open a browser tab where you can enter your prompt/message into the text box and view the logprobability for each token of the generated response.
 

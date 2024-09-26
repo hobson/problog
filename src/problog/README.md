@@ -1,53 +1,46 @@
-## Running Backend code (FLASK BACKEND)
+# Running Backend code (FLASK BACKEND)
 
-## Creating a Python Virtual Environment
+## 1. Create Python Virtual Environment
 
-## This completes the steps to create and manage Python virtual environments in both Linux and Windows.
+This completes the steps to create and manage Python virtual environments in both Linux and Windows.
 
-## Linux
+### Linux
 
-### Step 1: Install `pip`
-To start, install `pip` using the following command:
+#### 1. Install `pip`
+Install Python and `pip`:
 
 ```bash
 $ sudo apt-get install python-pip
 ```
 
-### Step 2: Install `virtualenv`
+#### 2. Install `virtualenv`
 Once `pip` is installed, install `virtualenv`:
 
 ```bash
 $ pip install virtualenv
 ```
 
-### Step 3: Check `virtualenv` Installation
+#### 3. Check `virtualenv` installation
 Verify that `virtualenv` was installed correctly:
 
 ```bash
 $ virtualenv --version
 ```
 
-### Step 4: Create a Virtual Environment
+#### 4. Create and activate a Virtual environment
 To create a virtual environment, use the following command:
 
 ```bash
-$ virtualenv virtualenv_name
+virtualenv .venv
+source .venv/bin/activate
+which python
 ```
-
-This will create a folder named `virtualenv_name`. You can replace `virtualenv_name` with any name you'd like.
-
-#### Creating Virtual Environment for Specific Python Versions
-To create a virtual environment with a specific version of Python:
-
-For Python 3:
-```bash
-$ virtualenv -p /usr/bin/python3 virtualenv_name
+```text
+/home/hobs/code/hobson/problog/.venv/bin/python
 ```
+This will create a folder named `.venv` and make it your default install path for all pip install commands.
+Your Python path should now be inside the bin directory of `.venv/`
 
-For Python 2.7:
-```bash
-$ virtualenv -p /usr/bin/python2.7 virtualenv_name
-```
 
 ### Step 5: Activate the Virtual Environment
 Activate the virtual environment using the command:
