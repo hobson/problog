@@ -19,6 +19,7 @@ const Chat: React.FC = () => {
   const [model, setModel] = useState('gpt-3.5-turbo');
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [systemPrompt, setSystemPrompt] = useState('You are an AI assistant.');
+  const [usernameMatch, setUsernameMatch] = useState(true);
 
   // New state for controlling the reset confirmation dialog
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
@@ -54,6 +55,13 @@ const Chat: React.FC = () => {
       const data = await response.json();
       setMessages(data.messages || []);
       setColorMessages(data.colorMessages || []);
+      const username = localStorage.getItem('username');
+
+      if (data.conversation.username !== username) {
+        setUsernameMatch(false);
+      } else {
+        setUsernameMatch(true);
+      }
     } catch (error) {
       console.error('Error fetching messages:', error);
     }
@@ -209,21 +217,28 @@ const Chat: React.FC = () => {
           </Box>
         )}
 
-        <Box sx={form}>
-          <TextField
-            fullWidth
-            variant="outlined"
-            placeholder="Type a message..."
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            onKeyPress={(e) => {
-              if (e.key === 'Enter') handleSendMessage();
-            }}
-          />
-          <IconButton color="primary" sx={sendIcon}>
-            <SendIcon onClick={handleSendMessage} sx={{ fontSize: 30 }} />
-          </IconButton>
-        </Box>
+
+        {usernameMatch ? (
+          <Box sx={form}>
+            <TextField
+              fullWidth
+              variant="outlined"
+              placeholder="Type a message..."
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') handleSendMessage();
+              }}
+            />
+            <IconButton color="primary" sx={sendIcon}>
+              <SendIcon onClick={handleSendMessage} sx={{ fontSize: 30 }} />
+            </IconButton>
+          </Box>
+        ) : (
+          <Typography sx={{ textAlign: 'center', fontStyle: 'italic', color: 'red' }}>
+            You cannot send messages to this conversation. It belongs to another user.
+          </Typography>
+        )}
       </Box>
 
       <Box sx={controllerContainer}>

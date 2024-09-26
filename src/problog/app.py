@@ -167,7 +167,7 @@ def colors():
         conversation = conversations_collection.find_one({"_id": ObjectId(conversationId)})
         if not conversation:
             return jsonify({"error": "Conversation not found"}), 404
-        
+
         # Check if the conversation's username matches
         if conversation.get('username') != username:
             return jsonify({"error": "Invalid or Unauthorized"}), 400
@@ -258,7 +258,8 @@ def get_messages():
             "conversation": {
                 "id": str(conversation["_id"]),  # Convert ObjectId to string
                 "createdAt": conversation.get("createdAt", ""),
-                "title": conversation.get("title", "")
+                "title": conversation.get("title", ""),
+                "username": conversation.get("username")
             },
             "messages": plain_messages,
             "colorMessages": color_messages
