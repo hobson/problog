@@ -168,8 +168,10 @@ def colors():
         if not conversation:
             return jsonify({"error": "Conversation not found"}), 404
         
-        if conversation.username != username:
-            return jsonify({"error": "Invalid or UnAuthorizided"}), 400
+        # Check if the conversation's username matches
+        if conversation.get('username') != username:
+            return jsonify({"error": "Invalid or Unauthorized"}), 400
+
         
         messages = data.get('messages', [])
         if not messages or not isinstance(messages, list) or len(messages) == 0:
