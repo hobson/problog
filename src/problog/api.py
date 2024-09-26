@@ -1,4 +1,4 @@
-from chat.chat import chat
+# from chat.chat import chat
 
 load_dotenv()
 endpoints = dict(
