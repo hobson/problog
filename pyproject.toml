@@ -32,7 +32,11 @@ classifiers = [
 ]
 
 dependencies = [
+  "bson",
   "fastapi[standard]",
+  "flask_cors",
+  "pymongo",
+  "fastparquet",
   "flask",
   "gradio",
   "ipython",
