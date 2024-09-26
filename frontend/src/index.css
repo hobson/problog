@@ -1,0 +1,12 @@
+@import url('https://fonts.googleapis.com/css2?family=Dosis:wght@200..800&display=swap');
+
+html, body, #root {
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+  }
+  
+  * {
+    box-sizing: border-box;
+  }
+  

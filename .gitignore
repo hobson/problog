@@ -6,6 +6,11 @@
 venv/
 .env
 .DS_Store
+Include
+Lib
+Scripts
+share
+
 **/*.joblib
 **/*.pickle
 

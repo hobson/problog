@@ -1,8 +1,6 @@
-from openai import OpenAI, AsyncOpenAI
-import os
-from dotenv import load_dotenv
-import requests
+from chat.chat import chat
 
+<<<<<<< HEAD
 load_dotenv()
 endpoints = dict(
     openrouter=dict(
@@ -100,3 +98,11 @@ def chat():
     )
 
     return chat_completion.choices[0].message.content
+=======
+messages = [{ "role": 'user', "content": 'Tell me about San Francisco!' },]
+provider = 'openai'
+model = 'gpt-3.5-turbo'
+system_prompt = 'You are an AI assistant.'
+
+chat_response = chat(messages, provider, model, system_prompt)
+>>>>>>> 66b3f162ebe3aba8c57db36821e610ee2191388f
