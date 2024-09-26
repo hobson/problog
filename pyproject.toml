@@ -32,7 +32,7 @@ classifiers = [
 ]
 
 dependencies = [
-  "fastapi",
+  "fastapi[standard]",
   "flask",
   "gradio",
   "ipython",

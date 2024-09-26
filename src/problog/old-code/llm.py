@@ -202,7 +202,7 @@ async def generate_tokens(
         prompt: str,
         model: str = MODEL,
         role: str = 'user',
-        top_logprobs: int = 5,
+        top_logprobs: int = 10,
         stream: bool = True,
         temperature: float = 0.,
 ):
@@ -213,7 +213,7 @@ async def generate_tokens(
         role=role,
         prompt=prompt,
         stream=stream,
-        logprobs=logprobs or top_logprobs,
+        logprobs=logprobs or bool(top_logprobs),
         top_logprobs=top_logprobs,
         temperature=temperature,
         requested=datetime.now().isoformat(),

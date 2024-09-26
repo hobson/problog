@@ -6,8 +6,10 @@ transformers
 openai
 panel
 gradio
-fastapi
+fastapi[standard]
 flask
+pymongo[srv]
+Flask-PyMongo
 spacy
 llama-index
 pandas

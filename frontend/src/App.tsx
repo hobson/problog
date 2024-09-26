@@ -1,13 +1,29 @@
-import React from 'react';
-import { Stack } from '@mui/material';
-import { Chat, Topbar } from './components';
+import React, { ReactNode } from 'react';
+import Home from './pages/Home';
+import Conversations from './pages/Conversations';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { Login, Register } from './components';
+
+interface PRP {
+  children: ReactNode;
+}
+
+const PR:React.FC<PRP> = ({ children }) => {
+  const username = localStorage.getItem("username");
+  return username ? children : <Navigate to="/login" />;
+}
+
 
 const App: React.FC = () => {
   return (
-    <Stack sx={{ height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-      <Topbar />
-      <Chat />
-    </Stack>
+    <BrowserRouter>
+      <Routes>
+        <Route path='/' element={<PR><Home /></PR>} />
+        <Route path='/conversations' element={<PR><Conversations /></PR>} />
+        <Route path='/login' element={<Login />} />
+        <Route path='/register' element={<Register />} />
+      </Routes>
+    </BrowserRouter>
   );
 };
 
