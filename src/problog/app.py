@@ -6,10 +6,11 @@ from bson import ObjectId
 from flask_cors import CORS
 from dotenv import load_dotenv
 from pymongo import MongoClient
+from werkzeug.security import generate_password_hash, check_password_hash
 
 # Local imports
 from chat.chat import chat
-from schema import Conversation, Message
+from schema import Conversation, Message, Users
 
 # ==================================================================================================>
 # ======================================== GSM8K ===================================================>
@@ -43,6 +44,7 @@ db = client['LLM']
 
 conversations_collection = db['conversations']
 messages_collection = db['messages']
+users = db['users']
 
 # In-memory storage for messages
 message_storage = []
@@ -68,25 +70,72 @@ def hello_world():
 @app.route("/conversations", methods=["GET"])
 def get_conversations():
     try:
-        conversations = list(conversations_collection.find())
+        grouped_conversations = {}
 
-        for conversation in conversations:
-            conversation['_id'] = str(conversation['_id'])
+        username = request.args.get('username')
 
-        return jsonify({
-            "conversations": conversations
-        }), 200
+        if not username:
+            return jsonify({"error": "Username is required"}), 400
+
+        # Fetch the user's conversations
+        user_conversations = list(conversations_collection.find({"username": username}))
+
+        # Ensure the user's conversations are added to the grouped dictionary
+        grouped_conversations[username] = []
+        for conversation in user_conversations:
+            grouped_conversations[username].append({
+                "id": str(conversation['_id']),
+                "messages": conversation['messages']
+            })
+
+        # Fetch conversations from other users
+        other_users_conversations = list(conversations_collection.find({"username": {"$ne": username}}))
+
+        # Group other users' conversations
+        for conversation in other_users_conversations:
+            other_username = conversation['username']
+            if other_username not in grouped_conversations:
+                grouped_conversations[other_username] = []
+            grouped_conversations[other_username].append({
+                "id": str(conversation['_id']),
+                "messages": conversation['messages']
+            })
+
+        # Convert the grouped dictionary to the desired response format
+        response = {
+            "conversations": []
+        }
+
+        # Add the current user's conversations first
+        response['conversations'].append({
+            "username": username,
+            "conversations": grouped_conversations[username]
+        })
+
+        # Add other users' conversations
+        for user, convos in grouped_conversations.items():
+            if user != username:
+                response['conversations'].append({
+                    "username": user,
+                    "conversations": convos
+                })
+
+        return jsonify(response), 200
 
     except Exception as e:
         return jsonify({"error": str(e)}), 400
-
     
 # ====================================== /conversations (POST) ========================================>
 
 @app.route("/conversations", methods=["POST"])
 def create_conversation():
     try:
-        conversation = Conversation()
+        data = request.json
+        if not data:
+            return jsonify({"error": "Invalid input data"}), 400
+
+        username = data.get('username')
+        conversation = Conversation(username)
         inserted_conversation = conversations_collection.insert_one(conversation.to_dict())
         conversation_id = inserted_conversation.inserted_id
         
@@ -110,9 +159,17 @@ def colors():
             return jsonify({"error": "Invalid input data"}), 400
 
         # Validate conversationId and messages
+        username = data.get('username')
         conversationId = data.get('conversationId')
         if not conversationId or not ObjectId.is_valid(conversationId):
             return jsonify({"error": "Invalid or missing conversationId"}), 400
+        
+        conversation = conversations_collection.find_one({"_id": ObjectId(conversationId)})
+        if not conversation:
+            return jsonify({"error": "Conversation not found"}), 404
+        
+        if conversation.username != username:
+            return jsonify({"error": "Invalid or UnAuthorizided"}), 400
         
         messages = data.get('messages', [])
         if not messages or not isinstance(messages, list) or len(messages) == 0:
@@ -210,8 +267,6 @@ def get_messages():
 
 
 
-
-
 # ====================================== /reset ====================================================>
 
 @app.route("/reset", methods=["POST"])
@@ -240,6 +295,61 @@ def reset_messages():
             "message": "Messages reset successfully",
             "conversation": updated_conversation
         }), 200
+    
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
+# ====================================== /register user ====================================================>
+
+@app.route("/register", methods=["POST"])
+def register():
+    try:
+        data = request.get_json()
+        username = data.get('username')
+        password = data.get('password')
+        
+        if not username or not password:
+            return jsonify({"error": "Username and password are required"}), 400
+        
+        existing_user = users.find_one({"username": username})
+        
+        if existing_user:
+            return jsonify({"error": "Username already exists. Please choose another one."}), 409
+        
+        hashed_password = generate_password_hash(password)
+        
+        user = Users(username, hashed_password)
+        result = users.insert_one(user.to_dict())
+        
+        return jsonify({"message": "Registration successful", "username": user.username}), 201
+    
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ====================================== /register user ====================================================>
+
+@app.route("/login", methods=["POST"])
+def login():
+    try:
+        data = request.get_json()
+        username = data.get('username')
+        password = data.get('password')
+        
+        if not username or not password:
+            return jsonify({"error": "Username and password are required"}), 400
+
+        # Find the user by username
+        result = users.find_one({"username": username})
+        
+        if result:
+            # Verify the password
+            if check_password_hash(result['password'], password):
+                return jsonify({"message": "Login successful", "username": username}), 200
+            else:
+                return jsonify({"error": "Incorrect password"}), 401
+        else:
+            return jsonify({"error": "Username not found"}), 404
     
     except Exception as e:
         return jsonify({"error": str(e)}), 500

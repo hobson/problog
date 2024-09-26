@@ -7,6 +7,9 @@ import { Box, TextField, IconButton, Typography, Drawer, Dialog, DialogTitle, Di
 import { chatBox, chatContainer, controllerContainer, drawer, form, menu, MessageBubble, messageContainer, messageText, sendIcon } from './Styles';
 import Controller from './Conroller';
 
+// const BASE_URL = "http://172.235.53.175:5000";
+const BASE_URL = "http://127.0.0.1:5000";
+
 const Chat: React.FC = () => {
   const [messages, setMessages] = useState<{ role: string; content: any }[]>([]);
   const [colorMessages, setColorMessages] = useState<any>([]);
@@ -17,7 +20,6 @@ const Chat: React.FC = () => {
   const [model, setModel] = useState('gpt-3.5-turbo');
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [systemPrompt, setSystemPrompt] = useState('You are an AI assistant.');
-  const [conversationId, setConversationId] = useState<string | null>(null);
 
   // New state for controlling the reset confirmation dialog
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
@@ -45,7 +47,7 @@ const Chat: React.FC = () => {
 
   const fetchMessages = async (convId: string) => {
     try {
-      const response = await fetch(`http://127.0.0.1:5000/messages?conversationId=${convId}`);
+      const response = await fetch(`${BASE_URL}/messages?conversationId=${convId}`);
 
       if (response.status === 404) { createNewConversation(); return; }
       if (!response.ok) throw new Error('Failed to fetch messages');
@@ -60,19 +62,20 @@ const Chat: React.FC = () => {
 
   const createNewConversation = async () => {
     try {
-      const response = await fetch('http://127.0.0.1:5000/conversations', {
+      const username = localStorage.getItem('username');
+      const response = await fetch(`${BASE_URL}/conversations`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        body: JSON.stringify({ username }),
       });
 
       if (!response.ok) throw new Error('Failed to create conversation');
-
+      setCreateDialogOpen(false)
       const data = await response.json();
       const newConvId = data.conversationId;
 
-      setConversationId(newConvId);
       localStorage.setItem('conversationId', newConvId);
       fetchMessages(newConvId);
 
@@ -92,9 +95,10 @@ const Chat: React.FC = () => {
     setMessages(updatedMessages);
     setColorMessages([...colorMessages, userMessage]);
     const storedConversationId = localStorage.getItem('conversationId');
+    const username = localStorage.getItem('username');
 
     try {
-      const response = await fetch('http://127.0.0.1:5000/chat', {
+      const response = await fetch(`${BASE_URL}/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -105,6 +109,7 @@ const Chat: React.FC = () => {
           system_prompt: systemPrompt,
           messages: updatedMessages,
           conversationId: storedConversationId,
+          username,
         }),
       });
 
@@ -144,7 +149,7 @@ const Chat: React.FC = () => {
     if (!storedConversationId) return;
   
     try {
-      const response = await fetch('http://127.0.0.1:5000/reset', {
+      const response = await fetch(`${BASE_URL}/reset`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -152,10 +157,9 @@ const Chat: React.FC = () => {
         body: JSON.stringify({ conversationId: storedConversationId }),
       });
       setResetDialogOpen(false);
-      const data = await response.json();
+      await response.json();
       setMessages([]);
       setColorMessages([]);
-      setConversationId(data.conversation._id);
     } catch (error) {
       console.error('Error resetting messages:', error);
     }
@@ -278,7 +282,7 @@ const Chat: React.FC = () => {
           <Typography>Are you sure you want to create new conversation!?</Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={createNewConversation} color="primary">Yes, Reset</Button>
+          <Button onClick={createNewConversation} color="primary">Yes, Create</Button>
           <Button onClick={handleCloseCreateDialog} color="secondary">Cancel</Button>
         </DialogActions>
       </Dialog>

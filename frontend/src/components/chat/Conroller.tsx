@@ -60,7 +60,7 @@ const Controller: React.FC<{
                         min={1}
                         max={1024}
                         sx={{ color: '#1abc9c' }}
-                        onChange={(e, value) => setMaxTokens(value as number)}
+                        onChange={(_, value) => setMaxTokens(value as number)}
                     />
                     <Typography sx={{ color: '#7f8c8d', fontSize: '0.9em', fontFamily: 'Dosis' }}>
                         Current: {maxTokens}
@@ -94,7 +94,7 @@ const Controller: React.FC<{
                     >
                         <MenuItem value="openai">openai</MenuItem>
                         <MenuItem value="openrouter">openrouter</MenuItem>
-                        <MenuItem value="togetherai">togetherai</MenuItem>
+                        {/* <MenuItem value="togetherai">togetherai</MenuItem> */}
                     </Select>
                 </Box>
 
