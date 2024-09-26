@@ -23,10 +23,24 @@ class Message:
 
 # Schema for Conversation
 class Conversation:
-    def __init__(self):
+    def __init__(self, username):
         self.messages = []
+        self.username = username
 
     def to_dict(self):
         return {
-            'messages': self.messages
+            'messages': self.messages,
+            'username': self.username
+        }
+    
+# Schema for Conversation
+class Users:
+    def __init__(self, username, password):
+        self.username = username
+        self.password = password
+
+    def to_dict(self):
+        return {
+            "username": self.username,
+            "password": self.password,
         }
