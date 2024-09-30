@@ -7,8 +7,8 @@ import { Box, TextField, IconButton, Typography, Drawer, Dialog, DialogTitle, Di
 import { chatBox, chatContainer, controllerContainer, drawer, form, menu, MessageBubble, messageContainer, messageText, sendIcon } from './Styles';
 import Controller from './Conroller';
 
-// const BASE_URL = "https://backend.eton.uz";
-const BASE_URL = "http://127.0.0.1:5000";
+const BASE_URL = "https://backend.eton.uz";
+// const BASE_URL = "http://127.0.0.1:5000";
 
 const Chat: React.FC = () => {
   const [messages, setMessages] = useState<{ role: string; content: any }[]>([]);
@@ -141,9 +141,9 @@ const Chat: React.FC = () => {
   };
 
   // Open reset confirmation dialog
-  const handleOpenResetDialog = () => {
-    setResetDialogOpen(true);
-  };
+  // const handleOpenResetDialog = () => {
+  //   setResetDialogOpen(true);
+  // };
 
   // Close reset confirmation dialog
   const handleCloseResetDialog = () => {
@@ -252,7 +252,7 @@ const Chat: React.FC = () => {
           setMaxTokens={setMaxTokens}
           systemPrompt={systemPrompt}
           setSystemPrompt={setSystemPrompt}
-          handleOpenResetDialog={handleOpenResetDialog}
+          // handleOpenResetDialog={handleOpenResetDialog}
           createNewConversation={handleOpenCreateDialog}
         />
       </Box>
@@ -268,7 +268,7 @@ const Chat: React.FC = () => {
             setMaxTokens={setMaxTokens}
             systemPrompt={systemPrompt}
             setSystemPrompt={setSystemPrompt}
-            handleOpenResetDialog={handleOpenResetDialog}
+            // handleOpenResetDialog={handleOpenResetDialog}
             createNewConversation={handleOpenCreateDialog}
           />
         </Box>

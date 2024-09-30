@@ -14,9 +14,9 @@ const Controller: React.FC<{
     setModel: (value: string) => void;
     provider: string, 
     setProvider: (value: string) => void;
-    handleOpenResetDialog: any;
+    // handleOpenResetDialog: any;
     createNewConversation: any;
-}> = ({ maxTokens, setMaxTokens, systemPrompt, setSystemPrompt, model, setModel, provider, setProvider, handleOpenResetDialog, createNewConversation }) => {
+}> = ({ maxTokens, setMaxTokens, systemPrompt, setSystemPrompt, model, setModel, provider, setProvider, createNewConversation }) => {
     return (
         <Paper 
             sx={{ 
