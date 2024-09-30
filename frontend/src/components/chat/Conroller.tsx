@@ -1,7 +1,7 @@
 import React from 'react';
 import { colors } from './data';
 import ColorDiagram from '../ColorDiagram';
-import RestartAltIcon from '@mui/icons-material/RestartAlt';
+// import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import { Box, TextField, Typography, Slider, Select, MenuItem, Paper, Button } from '@mui/material';
 import { Link } from 'react-router-dom';
 

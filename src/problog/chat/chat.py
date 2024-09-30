@@ -46,9 +46,5 @@ def chat(
             html_content = f'<span style="color:{color};">{content}</span>'
 
             colored_text += html_content
-
-    print("FULL TEXT RESPONSE (colored):", colored_text)
-    print("---------------------------------------------------------------")
-    print("FULL TEXT RESPONSE (pure):", pure_text)
     
     return {"colorContent": colored_text, "content": pure_text}
