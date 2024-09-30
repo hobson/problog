@@ -3,8 +3,8 @@ import { Box, Button, Container, TextField, Typography, Modal, Backdrop, Fade } 
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
-// const BASE_URL = "https://backend.eton.uz";
-const BASE_URL = "http://127.0.0.1:5000";
+const BASE_URL = "https://backend.eton.uz";
+// const BASE_URL = "http://127.0.0.1:5000";
 
 const Login: React.FC = () => {
   const [username, setUsername] = useState('');
