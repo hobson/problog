@@ -43,9 +43,9 @@ const Controller: React.FC<{
                             All Conversations
                         </Button>
                     </Link>
-                    <Button onClick={handleOpenResetDialog} fullWidth variant='outlined' sx={{my: 1, fontFamily: 'Dosis'}}>
+                    {/* <Button onClick={handleOpenResetDialog} fullWidth variant='outlined' sx={{my: 1, fontFamily: 'Dosis'}}>
                         Reset Conversation <RestartAltIcon sx={{ fontSize: 20 }} />
-                    </Button>
+                    </Button> */}
                     <Button onClick={createNewConversation} fullWidth variant='outlined' sx={{my: 1, fontFamily: 'Dosis'}}>
                         Create new Conversation +
                     </Button>
