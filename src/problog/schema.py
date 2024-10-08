@@ -21,16 +21,32 @@ class Message:
         }
 
 
+# Schema for File
+class File:
+    def __init__(self, file_data, conversation_id, file_title):
+        self.file_data = file_data  
+        self.file_title = file_title
+        self.conversation_id = conversation_id  
+
+    def to_dict(self):
+        return {
+            'file_data': self.file_data,
+            'file_title': self.file_title,
+            'conversation_id': self.conversation_id
+        }
+
 # Schema for Conversation
 class Conversation:
     def __init__(self, username):
         self.messages = []
         self.username = username
+        self.fileId = None  
 
     def to_dict(self):
         return {
             'messages': self.messages,
-            'username': self.username
+            'username': self.username,
+            'fileId': self.fileId
         }
     
 # Schema for Conversation
