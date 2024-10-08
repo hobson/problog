@@ -1,16 +1,18 @@
 from flask import Flask, request, jsonify
 import os
-import json
+import csv 
+import re
 import pandas as pd
 from bson import ObjectId
 from flask_cors import CORS
 from dotenv import load_dotenv
 from pymongo import MongoClient
+from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 
 # Local imports
-from chat.chat import chat
-from schema import Conversation, Message, Users
+from chat.chat import chat, check_answer_chat
+from schema import Conversation, Message, Users, File
 
 # ==================================================================================================>
 # ======================================== GSM8K ===================================================>
@@ -45,6 +47,7 @@ db = client['LLM']
 conversations_collection = db['conversations']
 messages_collection = db['messages']
 users = db['users']
+files_collection = db['files']
 
 # In-memory storage for messages
 message_storage = []
@@ -125,6 +128,135 @@ def get_conversations():
     except Exception as e:
         return jsonify({"error": str(e)}), 400
     
+# ====================================== /uploadFile (POST) ========================================>
+
+def clean_math_expression(data):
+    cleaned_data = re.sub(r"<<.*?>>", "", data)
+    cleaned_data = cleaned_data.replace("#", "")
+    return cleaned_data.strip()
+
+ALLOWED_EXTENSIONS = {'csv'}
+EXPECTED_COLUMNS = ["id", "question", "answer"] 
+
+# Helper function to check allowed file type
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+@app.route("/uploadFile", methods=["POST"])
+def uploadFile():
+    try:
+        # Check if the post request has the file part
+        if 'file' not in request.files:
+            return jsonify({"error": "No file part in the request"}), 400
+
+        file = request.files['file']
+        conversation_id = request.form.get('conversation_id')
+
+        # Check if the file is selected and valid
+        if file.filename == '':
+            return jsonify({"error": "No file selected"}), 400
+
+        if file and allowed_file(file.filename):
+            # Secure the filename to prevent unsafe characters
+            filename = secure_filename(file.filename)
+            
+            # Extract file title from the filename (without extension)
+            file_title = os.path.splitext(filename)[0]
+
+            # Read the CSV file content
+            file_data = []
+            csv_reader = csv.reader(file.read().decode('utf-8').splitlines())
+            
+            # Extract the header (first row) of the CSV
+            header = next(csv_reader, None)
+
+            # Check if the header matches the expected format
+            if header != EXPECTED_COLUMNS:
+                return jsonify({
+                    "error": "Invalid file format. Expected columns: {}".format(EXPECTED_COLUMNS)
+                }), 400
+
+            # Process each subsequent row
+            for row in csv_reader:
+                if len(row) == 3: 
+                    question = row[1].strip()
+                    answer = row[2].strip()
+                    file_data.append({"question": question, "answer": clean_math_expression(answer)})
+
+            # Get conversation ID from request
+            if not conversation_id:
+                return jsonify({"error": "No conversation ID provided."}), 400
+
+            # Find conversation by ID and ensure it exists
+            conversation = conversations_collection.find_one({"_id": ObjectId(conversation_id)})
+            if not conversation:
+                return jsonify({"error": "Conversation not found."}), 404
+
+            # Create a new File object
+            new_file = File(file_data=file_data, conversation_id=conversation_id, file_title=file_title)
+
+            inserted_file = files_collection.insert_one(new_file.to_dict())
+
+            # Update the conversation with the file ID
+            conversations_collection.update_one(
+                {"_id": ObjectId(conversation_id)},
+                {"$set": {"fileId": inserted_file.inserted_id}}
+            )
+
+            return jsonify({
+                "message": "File uploaded successfully", 
+                "file_id": str(inserted_file.inserted_id),
+                "file_title": str(file_title),
+            }), 200
+        else:
+            return jsonify({"error": "Invalid file type. Only .csv files are allowed."}), 400
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# ====================================== /deletefile (DELETE) =========================================>
+
+@app.route("/deleteFile", methods=["DELETE"])
+def deleteFile():
+    try:
+        # Get the fileId from the request body (or query parameter if needed)
+        file_id = request.json.get('fileId')
+
+        if not file_id:
+            return jsonify({"error": "No fileId provided"}), 400
+
+        # Find the file by fileId
+        file = files_collection.find_one({"_id": ObjectId(file_id)})
+
+        if not file:
+            return jsonify({"error": "File not found"}), 404
+
+        # Get the associated conversation ID from the file
+        conversation_id = file.get('conversation_id')
+
+        if not conversation_id:
+            return jsonify({"error": "Conversation ID not found in the file"}), 400
+
+        # Find the conversation associated with the fileId
+        conversation = conversations_collection.find_one({"fileId": ObjectId(file_id)})
+
+        if not conversation:
+            return jsonify({"error": "Conversation with the provided fileId not found"}), 404
+
+        # Set fileId to null in the conversation
+        conversations_collection.update_one(
+            {"_id": ObjectId(conversation_id)},
+            {"$set": {"fileId": None}}
+        )
+
+        # Delete the file from files_collection
+        files_collection.delete_one({"_id": ObjectId(file_id)})
+
+        return jsonify({"message": "File and associated data deleted successfully"}), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
 # ====================================== /conversations (POST) ========================================>
 
 @app.route("/conversations", methods=["POST"])
@@ -146,7 +278,6 @@ def create_conversation():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 400
-
 
 # ====================================== /chat ====================================================>
 
@@ -172,7 +303,6 @@ def colors():
         if conversation.get('username') != username:
             return jsonify({"error": "Invalid or Unauthorized"}), 400
 
-        
         messages = data.get('messages', [])
         if not messages or not isinstance(messages, list) or len(messages) == 0:
             return jsonify({"error": "No valid messages provided"}), 400
@@ -180,6 +310,7 @@ def colors():
         provider = data.get('provider', 'openai')
         model = data.get('model', 'gpt-3.5-turbo')
         system_prompt = data.get('system_prompt', 'You are an AI assistant.')
+        fileId = data.get('fileId', None)
 
         # Process user message
         user_message = messages[-1]
@@ -188,14 +319,39 @@ def colors():
         if not content:
             return jsonify({"error": "User message content is missing"}), 400
         
-        colorContent = "<span>No ColorContent</span>" 
-        
+        colorContent = "<span>No ColorContent</span>"
+
         # Create and store the user message
         userMessage = Message(content, role, colorContent, conversationId)
         user_message_id = messages_collection.insert_one(userMessage.to_dict()).inserted_id
 
-        # Get AI response
-        chat_response = chat(messages, provider, model, system_prompt)
+        # Conditional logic: if `fileId` is provided, use `bg_chat`, otherwise use `chat`
+        if fileId and fileId != 'nofile':
+            # Find the file using fileId
+            file = files_collection.find_one({"_id": ObjectId(fileId)})
+            if not file:
+                return jsonify({"error": "File not found"}), 404
+
+            # Use regex to search for the question in file_data
+            file_data = file.get("file_data", [])
+            actual_answer = None
+
+            # Loop through the file_data to find the matching question
+            for entry in file_data:
+                file_question = entry.get("question", "")
+                file_answer = entry.get("answer", "")
+
+                # Use regex to match the question
+                if re.search(re.escape(content), file_question, re.IGNORECASE):
+                    actual_answer = file_answer
+                    break
+
+            if actual_answer is None:
+                chat_response = chat(messages, provider, model, system_prompt)
+            else:
+                chat_response = check_answer_chat(messages, actual_answer, provider, model, system_prompt)
+        else:
+            chat_response = chat(messages, provider, model, system_prompt)
 
         # Process AI response
         system_role = "system"
@@ -204,7 +360,7 @@ def colors():
 
         if not chat_content or not chat_color_content:
             return jsonify({"error": "AI response is incomplete"}), 500
-        
+
         # Create and store the system (AI) message
         systemMessage = Message(chat_content, system_role, chat_color_content, conversationId)
         system_message_id = messages_collection.insert_one(systemMessage.to_dict()).inserted_id
@@ -253,22 +409,35 @@ def get_messages():
                 "conversationId": str(message.get("conversationId", ""))  # Convert ObjectId to string
             })
 
-        # Return the conversation and the two message structures in JSON format
-        return jsonify({
+        # Initialize file information
+        file_info = None
+        file_id = conversation.get("fileId")
+        
+        # If there is a fileId, fetch the file information
+        if file_id:
+            file_data = files_collection.find_one({"_id": ObjectId(file_id)})
+            if file_data:
+                file_info = {
+                    "fileId": str(file_data["_id"]), 
+                    "fileTitle": file_data.get("file_title", ""),
+                }
+
+        response = {
             "conversation": {
-                "id": str(conversation["_id"]),  # Convert ObjectId to string
+                "id": str(conversation["_id"]), 
                 "createdAt": conversation.get("createdAt", ""),
                 "title": conversation.get("title", ""),
-                "username": conversation.get("username")
+                "username": conversation.get("username"), 
             },
+            "file": file_info,
             "messages": plain_messages,
             "colorMessages": color_messages
-        }), 200
+        }
+
+        return jsonify(response), 200
 
     except Exception as e:
         return jsonify({"error": f"An error occurred: {str(e)}"}), 500
-
-
 
 # ====================================== /reset ====================================================>
 
