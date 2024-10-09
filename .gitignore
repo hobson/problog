@@ -18,6 +18,7 @@ share
 *.pt
 **/checkpoints/
 **/checkpoint/
+reveal.js/
 
 # bigdata
 db.sqlite3
