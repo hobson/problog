@@ -51,7 +51,6 @@ Natalia sold clips to 48 of her friends in April, and then she sold half as many
 
 Natalia sold 48/2 = 24 clips in May.
 
-
 ---
 
 ## Goodhart's Law (paraphrased)
@@ -83,6 +82,7 @@ What are the top diagnostic critieria for the Inheritted Truculence psychologica
 ---
 
 ## Response
+
 I'm sorry, but "Inherited Truculence" is not a recognized or legitimate psychological disorder. Truculence itself is not a diagnosable mental health condition. It is more of a personality trait or feature of behavior. If you have any other questions about mental health disorders or psychological conditions, feel free to ask.
 
 ---
@@ -115,13 +115,12 @@ Create an image for my presentation: A Reverse Centaurs (horse head on a human b
 
 ---
 
-[^1]: LLMs cannot find reasoning errors, but can correct them given the error location
+- [^1]: LLMs cannot find reasoning errors, but can correct them given the error location
     arXiv:2311.08516
-[^2]: Can ChatGPT Defend its Belief in Truth? Evaluating LLM Reasoning via Debate
+- [^2]: Can ChatGPT Defend its Belief in Truth? Evaluating LLM Reasoning via Debate
     arXiv:2305.13160
-[^3]: GPT-4 Doesn’t Know It’s Wrong: An Analysis of Iterative Prompting for Reasoning Problems
-
-[^10]: Automatic Engineering of Long Prompts
+- [^3]: GPT-4 Doesn’t Know It’s Wrong: An Analysis of Iterative Prompting for Reasoning Problems
+- [^10]: Automatic Engineering of Long Prompts
     arXiv:2311.10117
 
 ---
