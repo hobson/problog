@@ -7,6 +7,14 @@ import { Box, TextField, IconButton, Typography, Drawer, Dialog, DialogTitle, Di
 import { chatBox, chatContainer, controllerContainer, drawer, form, menu, MessageBubble, messageContainer, messageText, sendIcon } from './Styles';
 import Controller from './Conroller';
 
+// const BASE_URL = "https://backend.eton.uz";
+const BASE_URL = "http://127.0.0.1:5000";
+
+interface FileProp {
+  fileId: String, 
+  fileTitle: String,
+}
+
 const Chat: React.FC = () => {
   const [messages, setMessages] = useState<{ role: string; content: any }[]>([]);
   const [colorMessages, setColorMessages] = useState<any>([]);
@@ -17,7 +25,8 @@ const Chat: React.FC = () => {
   const [model, setModel] = useState('gpt-3.5-turbo');
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [systemPrompt, setSystemPrompt] = useState('You are an AI assistant.');
-  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [usernameMatch, setUsernameMatch] = useState(true);
+  const [file, setFile] = useState<FileProp | {}>({});
 
   // New state for controlling the reset confirmation dialog
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
@@ -45,14 +54,23 @@ const Chat: React.FC = () => {
 
   const fetchMessages = async (convId: string) => {
     try {
-      const response = await fetch(`http://127.0.0.1:5000/messages?conversationId=${convId}`);
+      const response = await fetch(`${BASE_URL}/messages?conversationId=${convId}`);
 
       if (response.status === 404) { createNewConversation(); return; }
       if (!response.ok) throw new Error('Failed to fetch messages');
 
       const data = await response.json();
+      console.log("This is my data", data)
       setMessages(data.messages || []);
       setColorMessages(data.colorMessages || []);
+      setFile(data.file || {});
+      const username = localStorage.getItem('username');
+
+      if (data.conversation.username !== username) {
+        setUsernameMatch(false);
+      } else {
+        setUsernameMatch(true);
+      }
     } catch (error) {
       console.error('Error fetching messages:', error);
     }
@@ -60,19 +78,20 @@ const Chat: React.FC = () => {
 
   const createNewConversation = async () => {
     try {
-      const response = await fetch('http://127.0.0.1:5000/conversations', {
+      const username = localStorage.getItem('username');
+      const response = await fetch(`${BASE_URL}/conversations`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        body: JSON.stringify({ username }),
       });
 
       if (!response.ok) throw new Error('Failed to create conversation');
-
+      setCreateDialogOpen(false)
       const data = await response.json();
       const newConvId = data.conversationId;
 
-      setConversationId(newConvId);
       localStorage.setItem('conversationId', newConvId);
       fetchMessages(newConvId);
 
@@ -85,16 +104,17 @@ const Chat: React.FC = () => {
   const handleSendMessage = async () => {
     if (newMessage.trim() === "") return;
     setSent(true);
-
+  
     const userMessage = { role: 'user', content: newMessage };
     const updatedMessages = [...messages, userMessage];
     setNewMessage('');
     setMessages(updatedMessages);
     setColorMessages([...colorMessages, userMessage]);
     const storedConversationId = localStorage.getItem('conversationId');
-
+    const username = localStorage.getItem('username');
+  
     try {
-      const response = await fetch('http://127.0.0.1:5000/chat', {
+      const response = await fetch(`${BASE_URL}/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -105,32 +125,42 @@ const Chat: React.FC = () => {
           system_prompt: systemPrompt,
           messages: updatedMessages,
           conversationId: storedConversationId,
+          username: username,
+          fileId: (file as FileProp).fileId || null,
         }),
       });
-
+  
       const data = await response.json();
-      console.log("This is data from bot:", data)
-      setMessages((prevMessages) => [
-        ...prevMessages,
-        { role: 'system', content: data.chat_response.content },
-      ]);
-      setColorMessages((prevColorMessages: any) => [
-        ...prevColorMessages,
-        { role: 'system', colorContent: data.chat_response.colorContent },
-      ]);
+      console.log("This is data from bot:", data);
+  
+      // Check if `chat_response` and its `content` and `colorContent` exist
+      if (data?.chat_response) {
+        setMessages((prevMessages) => [
+          ...prevMessages,
+          { role: 'system', content: data.chat_response.content || "No content available" },
+        ]);
+        setColorMessages((prevColorMessages: any) => [
+          ...prevColorMessages,
+          { role: 'system', colorContent: data.chat_response.colorContent || "<span>No color content</span>" },
+        ]);
+      } else {
+        console.error('Invalid response format:', data);
+      }
+  
       setSent(false);
-
+  
       console.log(JSON.stringify(data.chat_response?.colorContent));
     } catch (error) {
       setSent(false);
       console.error('Error sending message:', error);
     }
   };
+  
 
   // Open reset confirmation dialog
-  const handleOpenResetDialog = () => {
-    setResetDialogOpen(true);
-  };
+  // const handleOpenResetDialog = () => {
+  //   setResetDialogOpen(true);
+  // };
 
   // Close reset confirmation dialog
   const handleCloseResetDialog = () => {
@@ -144,7 +174,7 @@ const Chat: React.FC = () => {
     if (!storedConversationId) return;
   
     try {
-      const response = await fetch('http://127.0.0.1:5000/reset', {
+      const response = await fetch(`${BASE_URL}/reset`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -152,10 +182,9 @@ const Chat: React.FC = () => {
         body: JSON.stringify({ conversationId: storedConversationId }),
       });
       setResetDialogOpen(false);
-      const data = await response.json();
+      await response.json();
       setMessages([]);
       setColorMessages([]);
-      setConversationId(data.conversation._id);
     } catch (error) {
       console.error('Error resetting messages:', error);
     }
@@ -206,25 +235,34 @@ const Chat: React.FC = () => {
           </Box>
         )}
 
-        <Box sx={form}>
-          <TextField
-            fullWidth
-            variant="outlined"
-            placeholder="Type a message..."
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            onKeyPress={(e) => {
-              if (e.key === 'Enter') handleSendMessage();
-            }}
-          />
-          <IconButton color="primary" sx={sendIcon}>
-            <SendIcon onClick={handleSendMessage} sx={{ fontSize: 30 }} />
-          </IconButton>
-        </Box>
+
+        {usernameMatch ? (
+          <Box sx={form}>
+            <TextField
+              fullWidth
+              variant="outlined"
+              placeholder="Type a message..."
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') handleSendMessage();
+              }}
+            />
+            <IconButton color="primary" sx={sendIcon}>
+              <SendIcon onClick={handleSendMessage} sx={{ fontSize: 30 }} />
+            </IconButton>
+          </Box>
+        ) : (
+          <Typography sx={{ textAlign: 'center', fontStyle: 'italic', color: 'red' }}>
+            You cannot send messages to this conversation. It belongs to another user.
+          </Typography>
+        )}
       </Box>
 
       <Box sx={controllerContainer}>
         <Controller
+          file={file}
+          setFile={setFile}
           model={model}
           setModel={setModel}
           provider={provider}
@@ -233,14 +271,17 @@ const Chat: React.FC = () => {
           setMaxTokens={setMaxTokens}
           systemPrompt={systemPrompt}
           setSystemPrompt={setSystemPrompt}
-          handleOpenResetDialog={handleOpenResetDialog}
+          // handleOpenResetDialog={handleOpenResetDialog}
           createNewConversation={handleOpenCreateDialog}
+          usernameMatch={usernameMatch}
         />
       </Box>
 
       <Drawer anchor="right" open={drawerOpen} onClose={() => setDrawerOpen(false)}>
         <Box sx={drawer}>
           <Controller
+            file={file}
+            setFile={setFile}
             model={model}
             setModel={setModel}
             provider={provider}
@@ -249,8 +290,9 @@ const Chat: React.FC = () => {
             setMaxTokens={setMaxTokens}
             systemPrompt={systemPrompt}
             setSystemPrompt={setSystemPrompt}
-            handleOpenResetDialog={handleOpenResetDialog}
+            // handleOpenResetDialog={handleOpenResetDialog}
             createNewConversation={handleOpenCreateDialog}
+            usernameMatch={usernameMatch}
           />
         </Box>
       </Drawer>
@@ -278,7 +320,7 @@ const Chat: React.FC = () => {
           <Typography>Are you sure you want to create new conversation!?</Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={createNewConversation} color="primary">Yes, Reset</Button>
+          <Button onClick={createNewConversation} color="primary">Yes, Create</Button>
           <Button onClick={handleCloseCreateDialog} color="secondary">Cancel</Button>
         </DialogActions>
       </Dialog>
