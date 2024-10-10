@@ -2,9 +2,8 @@
 # Unreasonable
 # of LLMs
 
-- Hobson Lane
-- Vishvesh Bhat
-- [Fazliddin Fayziev](https://www.linkedin.com/in/fazliddin-fayziev/)
+- Researchers: Hobson Lane & Vishvesh Bhat
+- Student: [Fazliddin Fayziev](https://www.linkedin.com/in/fazliddin-fayziev/)
 
 ---
 
