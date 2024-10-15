@@ -6,9 +6,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 import { Box, TextField, IconButton, Typography, Drawer, Dialog, DialogTitle, DialogContent, DialogActions, Button } from '@mui/material';
 import { chatBox, chatContainer, controllerContainer, drawer, form, menu, MessageBubble, messageContainer, messageText, sendIcon } from './Styles';
 import Controller from './Conroller';
-
-// const BASE_URL = "https://backend.eton.uz";
-const BASE_URL = "http://127.0.0.1:5000";
+import { BASE_URL } from '../../api/api';
 
 interface FileProp {
   fileId: String, 
