@@ -3,6 +3,7 @@ import Home from './pages/Home';
 import Conversations from './pages/Conversations';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { Login, Register } from './components';
+import DownloadConversations from './pages/DownloadConversations';
 
 interface PRP {
   children: ReactNode;
@@ -20,6 +21,7 @@ const App: React.FC = () => {
       <Routes>
         <Route path='/' element={<PR><Home /></PR>} />
         <Route path='/conversations' element={<PR><Conversations /></PR>} />
+        <Route path='/admin/download/conversations' element={<PR><DownloadConversations /></PR>} />
         <Route path='/login' element={<Login />} />
         <Route path='/register' element={<Register />} />
       </Routes>

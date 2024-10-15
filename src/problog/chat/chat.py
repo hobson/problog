@@ -11,7 +11,6 @@ from chat.endpoint import get_client
 
 load_dotenv()
 
-
 # ==================================================================================>
 # ============================== CHECK ANSWER ======================================>
 # ==================================================================================>
@@ -21,6 +20,10 @@ def token_to_color(match):
 
 def normalize_number(token):
     return re.sub(r'[^\d.]', '', token)
+
+def list_of_numbers(token):
+    numbers = re.findall(r'\d+(?:\.\d+)?', token)
+    return numbers
             
 def check_answer_chat(
     messages, 
@@ -40,7 +43,7 @@ def check_answer_chat(
     colored_text = "" 
     pure_text = ""   
 
-    norm_answer = normalize_number(actual_answer)
+    norm_answer = list_of_numbers(actual_answer)
     for chunk in response:
         choice = chunk.choices[0]
         content = choice.delta.content
