@@ -1,11 +1,69 @@
 @import url('https://fonts.googleapis.com/css2?family=Dosis:wght@200..800&display=swap');
 
-html, body, #root {
-    height: 100%;
-    margin: 0;
-  }
-  
-  * {
-    box-sizing: border-box;
-  }
-  
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.input-wrapper {
+  width: 100%; 
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 10px 0;
+  overflow: hidden;
+}
+
+.placeholder {
+  position: relative;
+  width: 100%;
+  height: auto;
+}
+
+.styled-input {
+  width: 100%;
+  padding: 15px;
+  padding-left: 13px;
+  font-size: 16px;
+  font-family: 'Dosis', sans-serif;
+  border: 2px solid #ccc;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+  transition: border 0.3s ease;
+  outline: none;
+  white-space: nowrap;
+  overflow: hidden; 
+  text-overflow: ellipsis; 
+}
+
+.styled-input:focus {
+  border-color: #007BFF; 
+}
+
+.placeholder::after {
+  position: absolute;
+  font-family: 'Dosis';
+  left: 15px; 
+  top: 50%;
+  transform: translateY(-50%);
+  content: attr(data-placeholder);
+  pointer-events: none;
+  opacity: 0.6;
+  font-size: 16px; 
+  color: #999;
+  white-space: nowrap; 
+  overflow: hidden; 
+  text-overflow: ellipsis; 
+  transition: opacity 0.3s ease;
+}
+
+.styled-input:not(:placeholder-shown) + .placeholder::after {
+  opacity: 0;
+}

@@ -3,13 +3,13 @@ import DOMPurify from 'dompurify';
 import ForumIcon from '@mui/icons-material/Forum';
 import SendIcon from '@mui/icons-material/Send';
 import MenuIcon from '@mui/icons-material/Menu';
-import { Box, TextField, IconButton, Typography, Drawer, Dialog, DialogTitle, DialogContent, DialogActions, Button } from '@mui/material';
+import { Box, IconButton, Typography, Drawer, Dialog, DialogTitle, DialogContent, DialogActions, Button } from '@mui/material';
 import { chatBox, chatContainer, controllerContainer, drawer, form, menu, MessageBubble, messageContainer, messageText, sendIcon } from './Styles';
 import Controller from './Conroller';
 import { BASE_URL } from '../../api/api';
 
 interface FileProp {
-  fileId: String, 
+  fileId: String,
   fileTitle: String,
 }
 
@@ -25,12 +25,14 @@ const Chat: React.FC = () => {
   const [systemPrompt, setSystemPrompt] = useState('You are an AI assistant.');
   const [usernameMatch, setUsernameMatch] = useState(true);
   const [file, setFile] = useState<FileProp | {}>({});
+  const [searchInfo, setSearchInfo] = useState<string>("");
 
   // New state for controlling the reset confirmation dialog
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const inputRef = useRef(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -58,7 +60,6 @@ const Chat: React.FC = () => {
       if (!response.ok) throw new Error('Failed to fetch messages');
 
       const data = await response.json();
-      console.log("This is my data", data)
       setMessages(data.messages || []);
       setColorMessages(data.colorMessages || []);
       setFile(data.file || {});
@@ -102,7 +103,7 @@ const Chat: React.FC = () => {
   const handleSendMessage = async () => {
     if (newMessage.trim() === "") return;
     setSent(true);
-  
+
     const userMessage = { role: 'user', content: newMessage };
     const updatedMessages = [...messages, userMessage];
     setNewMessage('');
@@ -110,7 +111,7 @@ const Chat: React.FC = () => {
     setColorMessages([...colorMessages, userMessage]);
     const storedConversationId = localStorage.getItem('conversationId');
     const username = localStorage.getItem('username');
-  
+
     try {
       const response = await fetch(`${BASE_URL}/chat`, {
         method: 'POST',
@@ -127,10 +128,9 @@ const Chat: React.FC = () => {
           fileId: (file as FileProp).fileId || null,
         }),
       });
-  
+
       const data = await response.json();
-      console.log("This is data from bot:", data);
-  
+
       // Check if `chat_response` and its `content` and `colorContent` exist
       if (data?.chat_response) {
         setMessages((prevMessages) => [
@@ -144,16 +144,16 @@ const Chat: React.FC = () => {
       } else {
         console.error('Invalid response format:', data);
       }
-  
+
       setSent(false);
-  
+
       console.log(JSON.stringify(data.chat_response?.colorContent));
     } catch (error) {
       setSent(false);
       console.error('Error sending message:', error);
     }
   };
-  
+
 
   // Open reset confirmation dialog
   // const handleOpenResetDialog = () => {
@@ -168,9 +168,9 @@ const Chat: React.FC = () => {
   // RESET MESSAGES
   const handleReset = async () => {
     const storedConversationId = localStorage.getItem('conversationId');
-  
+
     if (!storedConversationId) return;
-  
+
     try {
       const response = await fetch(`${BASE_URL}/reset`, {
         method: 'POST',
@@ -199,7 +199,72 @@ const Chat: React.FC = () => {
   const handleCloseCreateDialog = () => {
     setCreateDialogOpen(false);
   };
-  
+
+
+  let debounceTimeout: ReturnType<typeof setTimeout> | null = null;
+
+  const search = async (content: string) => {
+    if (content.trim() === "") return "";
+    if (!(file as FileProp)?.fileId) return "";
+    try {
+      const response = await fetch(`${BASE_URL}/search`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          content,
+          fileId: (file as FileProp).fileId || null,
+        }),
+      });
+      const data = await response.json();
+
+      return data.question || "";
+    } catch (error) {
+      console.error('Error sending message:', error);
+      return "";
+    }
+  };
+
+  const onChangeMessage = (e: any) => {
+    const inputValue = e.target.value;
+    setNewMessage(inputValue);
+
+    if (inputValue.trim() === "") return;
+
+    if (debounceTimeout) clearTimeout(debounceTimeout);
+
+    debounceTimeout = setTimeout(async () => {
+      const question: string = await search(inputValue.trim()) || "";
+      setSearchInfo(question);
+    }, 500);
+  };
+
+
+  useEffect(() => {
+    return () => {
+      if (debounceTimeout) clearTimeout(debounceTimeout);
+    };
+  }, []);
+
+  const pressKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      setNewMessage(searchInfo);
+      setSearchInfo("");
+    }
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
+
+  const afterTheValue = (text:string, value:string) => {
+    let index = text.indexOf(value);
+    if (index !== -1) return text.slice(index);
+    return text;
+  }
+
 
   return (
     <Box sx={chatContainer}>
@@ -233,19 +298,21 @@ const Chat: React.FC = () => {
           </Box>
         )}
 
-
         {usernameMatch ? (
           <Box sx={form}>
-            <TextField
-              fullWidth
-              variant="outlined"
-              placeholder="Type a message..."
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              onKeyPress={(e) => {
-                if (e.key === 'Enter') handleSendMessage();
-              }}
-            />
+            <div className="input-wrapper">
+              <div className="placeholder" data-placeholder={(newMessage === "") ? "" : afterTheValue(searchInfo, newMessage)}>
+                <input
+                  title='Hello'
+                  ref={inputRef}
+                  value={newMessage}
+                  onChange={onChangeMessage}
+                  onKeyDown={pressKey}
+                  className="styled-input"
+                  placeholder={(newMessage === "") ? "Type your question here..." : ""}
+                />
+              </div>
+            </div>
             <IconButton color="primary" sx={sendIcon}>
               <SendIcon onClick={handleSendMessage} sx={{ fontSize: 30 }} />
             </IconButton>
@@ -255,6 +322,7 @@ const Chat: React.FC = () => {
             You cannot send messages to this conversation. It belongs to another user.
           </Typography>
         )}
+
       </Box>
 
       <Box sx={controllerContainer}>

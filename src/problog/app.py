@@ -11,7 +11,6 @@ from pymongo import MongoClient
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 
-
 # Local imports
 from chat.chat import chat, check_answer_chat
 from schema import Conversation, Message, Users, File
@@ -363,6 +362,51 @@ def create_conversation():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 400
+
+# ====================================== /search =====================================================>
+
+@app.route("/search", methods=["POST"])
+def searchQuestions():
+    try:
+        data = request.json
+        content = data.get('content', None)  # Assuming 'content' contains the string to search for
+        fileId = data.get('fileId', None)
+
+        if not content or not fileId:
+            return jsonify({"error": "Missing content or fileId in request"}), 400
+
+        # Find the file using fileId
+        file = files_collection.find_one({"_id": ObjectId(fileId)})
+        if not file:
+            return jsonify({"error": "File not found"}), 404
+
+        # Use regex to search for the question in file_data
+        file_data = file.get("file_data", [])
+
+        best_match = None
+        max_score = -1
+
+        # Loop through the file_data to find the most accurate match
+        for entry in file_data:
+            file_question = entry.get("question", "")
+
+            # Use regex to find matches in the question
+            match = re.search(re.escape(content), file_question, re.IGNORECASE)
+            if match:
+                # Calculate score based on match length (adjust as needed)
+                score = len(match.group(0))
+                if score > max_score:
+                    max_score = score
+                    best_match = file_question
+
+        if best_match:
+            return jsonify({ "question": best_match })
+        else:
+            return jsonify({"error": "No matching question found"}), 404
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
 
 # ====================================== /chat ====================================================>
 
