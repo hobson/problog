@@ -57,16 +57,23 @@ const Conversations: React.FC = () => {
                             <Typography sx={{ fontFamily: 'Dosis' }} variant="h6" gutterBottom>
                                 {conversationGroup.username}
                             </Typography>
-                            {conversationGroup.conversations.map((con, index) => (
+                            {conversationGroup.conversations.map((con:any, index) => (
                                 <ListItem
                                     sx={{ cursor: 'pointer' }}
                                     key={con.id} 
                                     onClick={() => handleConversationClick(con.id)}
                                 >
-                                    <ListItemText
-                                        primaryTypographyProps={{ sx: { fontFamily: 'Dosis' } }}
-                                        primary={`Conversation ${index + 1}`} 
-                                    />
+                                    {con?.title ? (
+                                        <ListItemText
+                                            primaryTypographyProps={{ sx: { fontFamily: 'Dosis' } }}
+                                            primary={con?.title} 
+                                        />
+                                    ): (
+                                        <ListItemText
+                                            primaryTypographyProps={{ sx: { fontFamily: 'Dosis' } }}
+                                            primary={`Conversation ${index + 1}`} 
+                                        />
+                                    )}
                                 </ListItem>
                             ))}
                         </Box>

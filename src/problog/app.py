@@ -14,6 +14,8 @@ from werkzeug.security import generate_password_hash, check_password_hash
 # Local imports
 from chat.chat import chat, check_answer_chat
 from schema import Conversation, Message, Users, File
+from classify.createcsv import create_csv
+from classify.main import classify_conversations
 
 # ==================================================================================================>
 # ======================================== GSM8K ===================================================>
@@ -62,6 +64,137 @@ color_messages = []
 # ========================================== API ===================================================>
 # ==================================================================================================>
 
+# ====================================== /check conversations ====================================================>
+
+@app.route("/check/conversations", methods=["GET"]) 
+def checkConversations():
+    try:
+        conversations_data = []
+        conversations = conversations_collection.find()
+        
+        for conversation in conversations:
+            conversation_id = str(conversation["_id"])
+
+            messages = list(messages_collection.find({"conversationId": conversation["_id"]}).sort("created_at", 1))
+            print(f"Conversation ID: {conversation_id} - Total messages found: {len(messages)}")
+
+            message_pairs = []
+
+            # Initial placeholders to identify if it's the first user message
+            bot_message = None
+            user_message = None
+            is_first_user_message = True
+
+            # Iterate over messages to form pairs
+            for message in messages:
+                if message["role"] == "user":
+                    user_message = message["content"]
+
+                    # If it's the first user message, pair it with None for bot_message
+                    if is_first_user_message:
+                        message_pairs.append([None, user_message])
+                        is_first_user_message = False
+                    else:
+                        # Otherwise, pair it with the previous bot message
+                        message_pairs.append([bot_message, user_message])
+                    bot_message = None  # Reset bot message after pairing
+                    user_message = None  # Reset user message for the next pair
+
+                elif message["role"] == "system":
+                    bot_message = message["content"]
+
+            # Append the current conversation's data to the main list
+            conversations_data.append({
+                "username": conversation['username'],
+                "conversationId": conversation_id,
+                "messages": message_pairs
+            })
+
+        data = classify_conversations(conversations_data)
+        create_csv(data)
+        return jsonify({"message": "Successfully created the csv file"}), 200
+
+    except Exception as e:
+        print(f"Error: {str(e)}")
+        return jsonify({"error": f"An error occurred: {str(e)}"}), 500
+
+# ====================================== /table ====================================================>
+
+@app.route("/get/table", methods=["GET"])
+def gettable():
+    try:
+        conversationId = request.args.get('conversationId')
+        if not conversationId or not ObjectId.is_valid(conversationId):
+            return jsonify({"error": "Invalid or missing conversationId"}), 400
+        
+        # Find the conversation using the conversationId
+        conversation = conversations_collection.find_one({"_id": ObjectId(conversationId)})
+        if not conversation:
+            return jsonify({"error": "Conversation not found"}), 404
+        
+        messages = list(messages_collection.find({"conversationId": ObjectId(conversationId)}).sort("createdAt", 1))
+        
+        # Prepare the response array
+        response_array = []
+
+        # Initialize variable to hold the last user message
+        user_message = None
+
+        # Loop through the messages
+        for message in messages:
+            if message.get("role") == "user":
+                user_message = message.get("content", "")
+            elif message.get("role") == "system":  # Adjust this if your bot messages have a different role
+                system_message = message.get("content", "")
+                answer_correctness = message.get("answer", "N/A")
+                model = message.get("model", "N/A")
+
+                fileId = conversation["fileId"]
+                file = files_collection.find_one({"_id": ObjectId(fileId)})
+                
+                if not file:
+                    return jsonify({"error": "File not found"}), 404
+
+                file_data = file.get("file_data", [])
+                actual_answer = "N/A"
+
+                # Search for the actual answer in file_data
+                for entry in file_data:
+                    file_question = entry.get("question", "")
+                    file_answer = entry.get("answer", "")
+    
+                    # Use regex to match the question
+                    if re.search(re.escape(user_message), file_question, re.IGNORECASE):
+                        actual_answer = file_answer
+                        break
+                
+                # Append to response_array if user_message exists
+                if user_message is not None:
+                    response_array.append([
+                        user_message, 
+                        system_message, 
+                        answer_correctness, 
+                        model,
+                        actual_answer
+                    ])
+                user_message = None  # Reset user_message after processing
+
+        response_data = {
+            "conversation": {
+                "id": str(conversation["_id"]), 
+                "createdAt": conversation.get("createdAt", ""),
+                "title": conversation.get("title", ""),
+                "username": conversation.get("username", ""), 
+            },
+            "messages": response_array,
+        }
+
+        return jsonify(response_data), 200
+
+    except Exception as e:
+        return jsonify({"error": f"An error occurred: {str(e)}"}), 500
+
+
 # ====================================== / ====================================================>
 
 @app.route("/")
@@ -92,7 +225,8 @@ def get_conversations():
         for conversation in user_conversations:
             grouped_conversations[username].append({
                 "id": str(conversation['_id']),
-                "messages": conversation['messages']
+                "messages": conversation['messages'],
+                "title": conversation.get("title", None)
             })
 
         # Fetch conversations from other users
@@ -105,7 +239,8 @@ def get_conversations():
                 grouped_conversations[other_username] = []
             grouped_conversations[other_username].append({
                 "id": str(conversation['_id']),
-                "messages": conversation['messages']
+                "messages": conversation['messages'],
+                "title": conversation.get("title", None)
             })
 
         # Convert the grouped dictionary to the desired response format
@@ -411,7 +546,7 @@ def searchQuestions():
 # ====================================== /chat ====================================================>
 
 @app.route("/chat", methods=["POST"])
-def colors():
+def chat_route():
     try:
         # Retrieve the input data
         data = request.json
@@ -491,7 +626,7 @@ def colors():
             return jsonify({"error": "AI response is incomplete"}), 500
 
         # Create and store the system (AI) message
-        systemMessage = Message(chat_content, system_role, chat_color_content, conversationId)
+        systemMessage = Message(chat_content, system_role, chat_color_content, conversationId, model)
         system_message_id = messages_collection.insert_one(systemMessage.to_dict()).inserted_id
 
         # Return the chat response to the client
@@ -500,6 +635,82 @@ def colors():
             "system_message_id": str(system_message_id),
             "chat_response": chat_response
         }), 200
+
+    except Exception as e:
+        return jsonify({"error": f"An error occurred: {str(e)}"}), 500
+    
+# ====================================== /correctOrWrong ================================================>
+
+@app.route("/correctOrWrong", methods=["POST"])
+def correctOrWrong():
+    try:
+        data = request.json
+        messageId = data.get('messageId')
+        answer = data.get('answer')
+        
+        # Validate messageId
+        if not messageId or not ObjectId.is_valid(messageId):
+            return jsonify({"error": "Invalid or missing messageId"}), 400
+        
+        # Validate answer
+        if answer not in ["wrong", "correct"]:
+            return jsonify({"error": "Invalid answer value; must be 'wrong' or 'correct'"}), 400
+
+        # Find and update the message
+        result = messages_collection.update_one(
+            {"_id": ObjectId(messageId)},
+            {"$set": {"answer": answer}}
+        )
+        
+        # Check if update was successful
+        if result.modified_count == 0:
+            return jsonify({"error": "Failed to update the message"}), 500
+
+        # Retrieve the updated message
+        updated_message = messages_collection.find_one({"_id": ObjectId(messageId)})
+        
+        # Return the updated message
+        return jsonify({
+            "message": {
+                "id": str(updated_message["_id"]),
+                "role": updated_message.get("role", "user"),
+                "content": updated_message.get("content", ""),
+                "colorContent": updated_message.get("colorContent", ""),
+                "answer": updated_message.get("answer", "")
+            }
+        }), 200
+
+    except Exception as e:
+        return jsonify({"error": f"An error occurred: {str(e)}"}), 500 
+    
+# ====================================== /edit_conversation_title ================================================>
+
+@app.route("/edit_conversation_title", methods=["POST"])
+def editConversationTitle():
+    try:
+        data = request.json
+        conversationId = data.get('conversationId')
+        title = data.get('title')
+        
+        # Validate conversationId
+        if not conversationId or not ObjectId.is_valid(conversationId):
+            return jsonify({"error": "Invalid or missing conversationId"}), 400
+        
+        # Validate title
+        if not title or not isinstance(title, str):
+            return jsonify({"error": "Invalid or missing title"}), 400
+
+        # Update the conversation title
+        result = conversations_collection.update_one(
+            {"_id": ObjectId(conversationId)},
+            {"$set": {"title": title}}
+        )
+
+        # Check if the update was successful
+        if result.modified_count == 0:
+            return jsonify({"error": "Failed to update title, conversation not found"}), 404
+        
+        return jsonify({"title": title}), 200
 
     except Exception as e:
         return jsonify({"error": f"An error occurred: {str(e)}"}), 500
@@ -520,22 +731,28 @@ def get_messages():
         
         # Fetch messages for the specified conversation
         messages = list(messages_collection.find({"conversationId": ObjectId(conversationId)}))
-        
+        # print("Fetched messages:", messages)
+
         # Prepare lists for messages and colorMessages
         plain_messages = []
         color_messages = []
 
         # Loop through the messages and create two separate structures
         for message in messages:
+            message_id = str(message["_id"])
             plain_messages.append({
+                "id": message_id,
                 "role": message.get("role", "user"),
                 "content": message.get("content", ""),
+                "answer": message.get("answer", None), 
             })
             color_messages.append({
+                "id": message_id,
                 "role": message.get("role", "user"),
+                "answer": message.get("answer", None), 
                 "content": message.get("content", ""),
                 "colorContent": message.get("colorContent", ""),
-                "conversationId": str(message.get("conversationId", ""))  # Convert ObjectId to string
+                "conversationId": str(message.get("conversationId", ""))  
             })
 
         # Initialize file information
@@ -563,6 +780,7 @@ def get_messages():
             "colorMessages": color_messages
         }
 
+        print(response)
         return jsonify(response), 200
 
     except Exception as e:
@@ -655,7 +873,9 @@ def login():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
+
 # ====================================== debug ====================================================>
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True ,port=8080,use_reloader=False)

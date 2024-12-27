@@ -26,6 +26,7 @@ const Chat: React.FC = () => {
   const [usernameMatch, setUsernameMatch] = useState(true);
   const [file, setFile] = useState<FileProp | {}>({});
   const [searchInfo, setSearchInfo] = useState<string>("");
+  const [conversationTitle, setConversationTitle] = useState("");
 
   // New state for controlling the reset confirmation dialog
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
@@ -62,6 +63,7 @@ const Chat: React.FC = () => {
       const data = await response.json();
       setMessages(data.messages || []);
       setColorMessages(data.colorMessages || []);
+      setConversationTitle(data?.conversation?.title || "");
       setFile(data.file || {});
       const username = localStorage.getItem('username');
 
@@ -135,25 +137,22 @@ const Chat: React.FC = () => {
       if (data?.chat_response) {
         setMessages((prevMessages) => [
           ...prevMessages,
-          { role: 'system', content: data.chat_response.content || "No content available" },
+          { id: data.system_message_id, role: 'system', content: data.chat_response.content || "No content available" },
         ]);
         setColorMessages((prevColorMessages: any) => [
           ...prevColorMessages,
-          { role: 'system', colorContent: data.chat_response.colorContent || "<span>No color content</span>" },
+          { id: data.system_message_id, role: 'system', colorContent: data.chat_response.colorContent || "<span>No color content</span>" },
         ]);
       } else {
         console.error('Invalid response format:', data);
       }
 
       setSent(false);
-
-      console.log(JSON.stringify(data.chat_response?.colorContent));
     } catch (error) {
       setSent(false);
       console.error('Error sending message:', error);
     }
   };
-
 
   // Open reset confirmation dialog
   // const handleOpenResetDialog = () => {
@@ -259,12 +258,92 @@ const Chat: React.FC = () => {
     }
   };
 
-  const afterTheValue = (text:string, value:string) => {
+  const afterTheValue = (text: string, value: string) => {
     let index = text.indexOf(value);
     if (index !== -1) return text.slice(index);
     return text;
   }
 
+  const handleFeedback = async (feedback:string, messageId:string, currentFeedback = null) => {
+    if (currentFeedback === feedback) {
+      alert('This option is already chosen!');
+      return;
+    }
+    if (feedback !== 'wrong' && feedback !== 'correct') {
+      alert('Error: Feedback must be either "Correct" or "Wrong"');
+      return;
+    }
+  
+    try {
+      const response = await fetch(`${BASE_URL}/correctOrWrong`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          messageId: messageId,
+          answer: feedback
+        })
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Error:", errorData.error);
+        alert(`Failed to submit feedback: ${errorData.error}`);
+        return;
+      }
+  
+      await response.json();
+  
+      // Update the answer in the corresponding message
+      setMessages((prevMessages:any) =>
+        prevMessages.map((message:any) =>
+          message.id === messageId ? { ...message, answer: feedback } : message
+        )
+      );
+  
+      // If the message is also in colorMessages, update it there as well
+      setColorMessages((prevColorMessages:any) =>
+        prevColorMessages.map((colorMessage:any) =>
+          colorMessage.id === messageId ? { ...colorMessage, answer: feedback } : colorMessage
+        )
+      );
+  
+    } catch (error) {
+      console.error("An error occurred:", error);
+      alert("An error occurred while submitting feedback.");
+    }
+  };  
+
+
+  const changeConversationTitle = async (newTitle:string) => {
+    const conversationId = localStorage.getItem('conversationId');
+    try {
+      const response = await fetch(`${BASE_URL}/edit_conversation_title`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          conversationId,
+          title: newTitle
+        })
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Error:", errorData.error);
+        alert(`Failed to update conversation title: ${errorData.error}`);
+        return;
+      }
+  
+      const result = await response.json();
+      setConversationTitle(result?.title || "");
+      alert(`Conversation title updated successfully to: ${result.title}`);
+    } catch (error) {
+      alert("An error occurred while updating the conversation title.");
+    }
+  };  
 
   return (
     <Box sx={chatContainer}>
@@ -272,10 +351,45 @@ const Chat: React.FC = () => {
         {colorMessages.length > 0 ? (
           <Box sx={messageContainer}>
             {colorMessages.map((message: any, index: number) => (
-              <MessageBubble key={index} isuser={message.role === 'user' ? true : false}>
+              <MessageBubble key={index} isuser={message.role === 'user'}>
                 {message.role === 'system' ? (
-                  <div style={{ display: "flex" }}>
-                    <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(message.colorContent) }} />
+                  <div style={{ display: "flex", flexDirection: "column" }}>
+                    <div
+                      dangerouslySetInnerHTML={{
+                        __html: DOMPurify.sanitize(message.colorContent),
+                      }}
+                    />
+                    {/* <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "8px" }}>
+                      <button
+                        onClick={() => handleFeedback("wrong", message?.id, message?.answer)}
+                        style={{
+                          fontFamily: "Dosis",
+                          marginRight: "8px",
+                          color: "#000",
+                          border: "1px solid #000",
+                          padding: "4px 8px",
+                          cursor: "pointer",
+                          backgroundColor: message.answer === "wrong" ? "#ADD8E6" : "transparent",
+                          borderRadius: "10px",
+                        }}
+                      >
+                        Wrong
+                      </button>
+                      <button
+                        onClick={() => handleFeedback("correct", message.id, message?.answer)}
+                        style={{
+                          fontFamily: "Dosis",
+                          color: "#000",
+                          border: "1px solid #000",
+                          padding: "4px 8px",
+                          cursor: "pointer",
+                          backgroundColor: message.answer === "correct" ? "#ADD8E6" : "transparent",
+                          borderRadius: "10px",
+                        }}
+                      >
+                        Correct
+                      </button>
+                    </div> */}
                   </div>
                 ) : (
                   <Typography sx={messageText} variant="body1">
@@ -283,7 +397,9 @@ const Chat: React.FC = () => {
                   </Typography>
                 )}
               </MessageBubble>
+
             ))}
+
             {sent ? (
               <Typography sx={{ fontFamily: 'Dosis' }}>
                 Typing...
@@ -337,6 +453,8 @@ const Chat: React.FC = () => {
           setMaxTokens={setMaxTokens}
           systemPrompt={systemPrompt}
           setSystemPrompt={setSystemPrompt}
+          conversationTitle={conversationTitle}
+          changeConversationTitle={changeConversationTitle}
           // handleOpenResetDialog={handleOpenResetDialog}
           createNewConversation={handleOpenCreateDialog}
           usernameMatch={usernameMatch}
@@ -356,6 +474,8 @@ const Chat: React.FC = () => {
             setMaxTokens={setMaxTokens}
             systemPrompt={systemPrompt}
             setSystemPrompt={setSystemPrompt}
+            conversationTitle={conversationTitle}
+            changeConversationTitle={changeConversationTitle}
             // handleOpenResetDialog={handleOpenResetDialog}
             createNewConversation={handleOpenCreateDialog}
             usernameMatch={usernameMatch}

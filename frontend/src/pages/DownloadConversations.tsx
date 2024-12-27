@@ -16,8 +16,8 @@ type ConversationsProp = {
 const DownloadConversations: React.FC = () => {
     const [conversations, setConversations] = useState<ConversationsProp[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
-    const [downloading, setDownloading] = useState<string | null>(null); 
-    const [showSuccessAlert, setShowSuccessAlert] = useState<boolean>(false); 
+    const [downloading, setDownloading] = useState<string | null>(null);
+    const [showSuccessAlert, setShowSuccessAlert] = useState<boolean>(false);
 
     useEffect(() => {
         const fetchConversations = async () => {
@@ -45,18 +45,18 @@ const DownloadConversations: React.FC = () => {
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = 'conversation.json'; 
+                a.download = 'conversation.json';
                 document.body.appendChild(a);
                 a.click();
                 a.remove();
-                setShowSuccessAlert(true); 
+                setShowSuccessAlert(true);
             } else {
                 console.error('Failed to download conversation:', response.statusText);
             }
         } catch (error) {
             console.error('Error during conversation download:', error);
         } finally {
-            setDownloading(null); 
+            setDownloading(null);
         }
     };
 
@@ -77,7 +77,7 @@ const DownloadConversations: React.FC = () => {
                             <Typography sx={{ fontFamily: 'Dosis' }} variant="h6" gutterBottom>
                                 {conversationGroup.username}
                             </Typography>
-                            {conversationGroup.conversations.map((con, index) => (
+                            {conversationGroup.conversations.map((con: any, index) => (
                                 <ListItem
                                     sx={{ cursor: 'pointer' }}
                                     key={con.id}
@@ -86,7 +86,7 @@ const DownloadConversations: React.FC = () => {
                                             edge="end"
                                             aria-label="download"
                                             onClick={() => handleDownloadClick(con.id)}
-                                            disabled={downloading === con.id} 
+                                            disabled={downloading === con.id}
                                         >
                                             {downloading === con.id ? (
                                                 <CircularProgress size={24} />
@@ -96,10 +96,17 @@ const DownloadConversations: React.FC = () => {
                                         </IconButton>
                                     }
                                 >
-                                    <ListItemText
-                                        primaryTypographyProps={{ sx: { fontFamily: 'Dosis' } }}
-                                        primary={`Conversation ${index + 1}`}
-                                    />
+                                    {con?.title ? (
+                                        <ListItemText
+                                            primaryTypographyProps={{ sx: { fontFamily: 'Dosis' } }}
+                                            primary={con?.title}
+                                        />
+                                    ) : (
+                                        <ListItemText
+                                            primaryTypographyProps={{ sx: { fontFamily: 'Dosis' } }}
+                                            primary={`Conversation ${index + 1}`}
+                                        />
+                                    )}
                                 </ListItem>
                             ))}
                         </Box>

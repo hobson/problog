@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import { colors } from './data';
 import { Link } from 'react-router-dom';
-import ColorDiagram from '../ColorDiagram';
-import DeleteIcon from '@mui/icons-material/Delete';
-import { Box, TextField, Typography, Slider, Select, MenuItem, Paper, Button, CircularProgress } from '@mui/material';
 import { BASE_URL } from '../../api/api';
+import ColorDiagram from '../ColorDiagram';
+import EditIcon from '@mui/icons-material/Edit';
+import CheckIcon from '@mui/icons-material/Check';
+import CloseIcon from '@mui/icons-material/Close';
+import DeleteIcon from '@mui/icons-material/Delete';
+import { Box, TextField, Typography, Slider, Select, MenuItem, Paper, Button, CircularProgress, IconButton } from '@mui/material';
 
 const Controller: React.FC<{
     maxTokens: number;
@@ -19,10 +22,29 @@ const Controller: React.FC<{
     file: any;
     setFile: any;
     usernameMatch: boolean;
-}> = ({ maxTokens, setMaxTokens, systemPrompt, setSystemPrompt, model, setModel, provider, setProvider, createNewConversation, file, setFile, usernameMatch }) => {
+    conversationTitle: string;
+    changeConversationTitle: any;
+}> = ({ maxTokens, setMaxTokens, systemPrompt, setSystemPrompt, model, setModel, provider, setProvider, createNewConversation, file, setFile, usernameMatch, conversationTitle, changeConversationTitle }) => {
     const [uploadFile, setUploadFile] = useState<File | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
     const [uploadSuccess, setUploadSuccess] = useState<boolean | null>(null);
+
+    const [isEditing, setIsEditing] = useState(false);
+    const [tempTitle, setTempTitle] = useState(conversationTitle);
+
+    const handleEditClick = () => {
+        setIsEditing(true);
+    };
+
+    const handleSaveClick = () => {
+        changeConversationTitle(tempTitle)
+        setIsEditing(false);
+    };
+
+    const handleCancelClick = () => {
+        setTempTitle(conversationTitle);
+        setIsEditing(false); 
+    };
 
     // Handle file selection
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -94,6 +116,9 @@ const Controller: React.FC<{
         }
     };
 
+    const date = new Date(Date.now());
+    const formattedDate = `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`;
+
     return (
         <Paper
             sx={{
@@ -106,6 +131,42 @@ const Controller: React.FC<{
             }}
         >
             <Box>
+                <Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <Typography variant="h5" sx={{ mb: 3, fontSize: 18, fontWeight: 400, fontFamily: 'Dosis', color: '#000000' }}>
+                            Conversation name:
+                        </Typography>
+                        {usernameMatch && (
+                            !isEditing && (
+                                <EditIcon sx={{ cursor: "pointer", fontSize: 30, mx: 1 }} onClick={handleEditClick} />
+                            )
+                        )}
+                    </Box>
+
+                    {usernameMatch && (
+                        isEditing && (
+                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                <TextField
+                                    value={tempTitle}
+                                    onChange={(e) => setTempTitle(e.target.value)}
+                                    variant="outlined"
+                                    size="small"
+                                    sx={{ fontSize: 18, fontFamily: 'Dosis' }}
+                                    autoFocus
+                                />
+                                <IconButton onClick={handleSaveClick} sx={{ ml: 1, color: 'green' }}>
+                                    <CheckIcon />
+                                </IconButton>
+                                <IconButton onClick={handleCancelClick} sx={{ color: 'red' }}>
+                                    <CloseIcon />
+                                </IconButton>
+                            </Box>
+                        )
+                    )}
+                </Box>
+                <Typography variant="h5" sx={{ mb: 3, fontSize: 18, fontWeight: 400, fontFamily: 'Dosis', color: '#34495e' }}>
+                    {conversationTitle ? conversationTitle : 'No Conversation name yet'}
+                </Typography>
                 <Typography variant="h5" sx={{ mb: 3, fontWeight: 'bold', fontFamily: 'Dosis', color: '#34495e' }}>
                     Settings
                 </Typography>
@@ -173,7 +234,7 @@ const Controller: React.FC<{
                         sx={{ backgroundColor: '#ecf0f1', borderRadius: '10px' }}
                     >
                         <MenuItem value="openai">openai</MenuItem>
-                        <MenuItem value="openrouter">openrouter</MenuItem>
+                        {/* <MenuItem value="openrouter">openrouter</MenuItem> */}
                     </Select>
                 </Box>
 
@@ -188,9 +249,22 @@ const Controller: React.FC<{
                         onChange={(e) => setModel(e.target.value as string)}
                         sx={{ backgroundColor: '#ecf0f1', borderRadius: '10px' }}
                     >
-                        <MenuItem value="gpt-3.5-turbo">GPT-3.5-TURBO</MenuItem>
+                        <MenuItem value="gpt-4o-2024-08-06">GPT-4o-2024-08-06</MenuItem>
+                        <MenuItem value="gpt-4o-2024-05-13">GPT-4o-2024-05-13</MenuItem>
+                        <MenuItem value="chatgpt-4o-latest">ChatGPT-4o-Latest {formattedDate}</MenuItem>
+                        <MenuItem value="gpt-4o-mini">GPT-4o-Mini</MenuItem>
+                        <MenuItem value="gpt-4o-mini-2024-07-18">GPT-4o-Mini-2024-07-18</MenuItem>
+                        <MenuItem value="gpt-4-turbo-2024-04-09">GPT-4-Turbo-2024-04-09</MenuItem>
+                        <MenuItem value="gpt-4-turbo-preview">GPT-4-Turbo-Preview</MenuItem>
+                        <MenuItem value="gpt-4-0125-preview">GPT-4-0125-Preview</MenuItem>
+                        <MenuItem value="gpt-4-1106-preview">GPT-4-1106-Preview</MenuItem>
                         <MenuItem value="gpt-4">GPT-4</MenuItem>
+                        <MenuItem value="gpt-4-0613">GPT-4-0613</MenuItem>
+                        <MenuItem value="gpt-3.5-turbo-0125">GPT-3.5-Turbo-0125</MenuItem>
+                        <MenuItem value="gpt-3.5-turbo">GPT-3.5-Turbo</MenuItem>
+                        <MenuItem value="gpt-3.5-turbo-1106">GPT-3.5-Turbo-1106</MenuItem>
                     </Select>
+
                 </Box>
 
                 {usernameMatch && (
