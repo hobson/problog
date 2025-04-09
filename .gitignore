@@ -124,6 +124,7 @@ docs/**/*.html
 
 # secrets and private user data
 .env
+*history.txt
 **/*secret*
 **/*private*
 **/*credential*

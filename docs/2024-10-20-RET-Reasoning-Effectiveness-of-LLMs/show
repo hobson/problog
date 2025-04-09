@@ -10,4 +10,4 @@ theme=beige
 if [[ -n "$1" ]] ; then
     theme=$1
 fi
-reveal-md RET_Effectively_Unreasonable_LLMs.md --theme=$theme
+reveal-md $(ls RET_*.md | head -n 1) --theme=$theme

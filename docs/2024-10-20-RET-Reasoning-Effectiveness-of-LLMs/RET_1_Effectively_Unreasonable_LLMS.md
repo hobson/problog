@@ -1,5 +1,5 @@
-# Effectively
-# Unreasonable
+# Reasoning
+# Effectiveness
 # of LLMs
 
 - Researchers: Hobson Lane & Vishvesh Bhat
