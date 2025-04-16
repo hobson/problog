@@ -4,8 +4,7 @@ import { Link } from 'react-router-dom';
 import ColorDiagram from '../ColorDiagram';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { Box, TextField, Typography, Slider, Select, MenuItem, Paper, Button, CircularProgress } from '@mui/material';
-
-const BASE_URL = "http://127.0.0.1:5000";
+import { BASE_URL } from '../../api/api';
 
 const Controller: React.FC<{
     maxTokens: number;
@@ -24,14 +23,13 @@ const Controller: React.FC<{
     const [uploadFile, setUploadFile] = useState<File | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
     const [uploadSuccess, setUploadSuccess] = useState<boolean | null>(null);
-    const [fileTitle, setFileTitle] = useState('');
-    console.log('fileTitle: ' + fileTitle);
+    // const [fileTitle, setFileTitle] = useState('');
+    // console.log('fileTitle: ' + fileTitle);
 
     // Handle file selection
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const selectedFile = event.target.files?.[0];
         if (selectedFile) {
-            setFileTitle(selectedFile.name.split('.')[0]);
             setUploadFile(selectedFile);
             setUploadSuccess(null);
         }
@@ -88,7 +86,6 @@ const Controller: React.FC<{
                     alert(data.message);
                     setFile({});
                     setUploadFile(null);
-                    setFileTitle('');
                 } else {
                     alert(data.error || 'Error deleting the file.');
                 }

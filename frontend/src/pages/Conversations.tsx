@@ -1,9 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Box, Typography, List, ListItem, ListItemText, CircularProgress } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-
-// const BASE_URL = "https://backend.eton.uz";
-const BASE_URL = "http://127.0.0.1:5000";
+import { BASE_URL } from '../api/api';
 
 type Conversation = {
     id: string;

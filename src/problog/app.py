@@ -1,4 +1,5 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response
+import json
 import os
 import csv
 import re
@@ -19,9 +20,12 @@ from schema import Conversation, Message, Users, File
 # ==================================================================================================>
 
 splits = {'train': 'main/train-00000-of-00001.parquet', 'test': 'main/test-00000-of-00001.parquet'}
-df = pd.read_parquet("hf://datasets/openai/gsm8k/" + splits["train"])
-
-df.to_csv("gsm8k.csv")
+try:
+    df = pd.read_parquet("hf://datasets/openai/gsm8k/" + splits["train"])
+    df.to_csv("gsm8k.csv")
+    print("Dataset saved as gsm8k.csv successfully.")
+except Exception as e:
+    print(f"An error occurred while fetching the dataset: {e}")
 
 # ==================================================================================================>
 # ======================================== CORS ====================================================>
@@ -30,6 +34,7 @@ df.to_csv("gsm8k.csv")
 app = Flask(__name__)
 cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
+
 
 # ==================================================================================================>
 # ===================================== DATABASE ===================================================>
@@ -137,7 +142,12 @@ def clean_math_expression(data):
 
 
 ALLOWED_EXTENSIONS = {'csv'}
+<< << << < HEAD
 EXPECTED_COLUMNS = ["id", "question", "answer"]
+== == == =
+EXPECTED_COLUMNS = ["id", "question", "answer"]  # Original expected format
+EXPECTED_COLUMNS_NO_ID = ["", "question", "answer"]  # Format with leading empty column
+>>>>>> > fa464f3b595d9a5eb9977c7d95397b417acc8c39
 
 # Helper function to check allowed file type
 
@@ -174,18 +184,34 @@ def uploadFile():
             # Extract the header (first row) of the CSV
             header = next(csv_reader, None)
 
-            # Check if the header matches the expected format
-            if header != EXPECTED_COLUMNS:
+            # Check if the header matches the expected formats
+            if header == EXPECTED_COLUMNS:
+                id_included = True  # The header includes "id"
+            elif header == EXPECTED_COLUMNS_NO_ID:
+                id_included = False  # The header doesn't include "id"
+            else:
                 return jsonify({
-                    "error": "Invalid file format. Expected columns: {}".format(EXPECTED_COLUMNS)
+                    "error": "Invalid file format. Expected columns: 'id, question, answer' or ', question, answer'."
                 }), 400
 
             # Process each subsequent row
             for row in csv_reader:
+
+
+<< << << < HEAD
                 if len(row) == 3:
+== == == =
+                if id_included and len(row) == 3:  # Full format with ID
+>>>>>> > fa464f3b595d9a5eb9977c7d95397b417acc8c39
                     question = row[1].strip()
                     answer = row[2].strip()
                     file_data.append({"question": question, "answer": clean_math_expression(answer)})
+                elif not id_included and len(row) == 3:  # Format without ID (leading comma)
+                    question = row[1].strip()
+                    answer = row[2].strip()
+                    file_data.append({"question": question, "answer": clean_math_expression(answer)})
+                else:
+                    return jsonify({"error": "Invalid row format in the file."}), 400
 
             # Get conversation ID from request
             if not conversation_id:
@@ -217,6 +243,75 @@ def uploadFile():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+# ====================================== /download CONVERSATION (GET) ========================================>
+
+@app.route("/downloadConversation", methods=["GET"])
+def downloadConversation():
+    try:
+        conversationId = request.args.get('conversationId')
+        if not conversationId or not ObjectId.is_valid(conversationId):
+            return jsonify({"error": "Invalid or missing conversationId"}), 400
+        
+        # Find the conversation using the conversationId
+        conversation = conversations_collection.find_one({"_id": ObjectId(conversationId)})
+        if not conversation:
+            return jsonify({"error": "Conversation not found"}), 404
+        
+        # Fetch messages for the specified conversation
+        messages = list(messages_collection.find({"conversationId": ObjectId(conversationId)}))
+        
+        # Prepare lists for messages and colorMessages
+        plain_messages = []
+        color_messages = []
+
+        # Loop through the messages and create two separate structures
+        for message in messages:
+            plain_messages.append({
+                "role": message.get("role", "user"),
+                "content": message.get("content", ""),
+            })
+            color_messages.append({
+                "role": message.get("role", "user"),
+                "content": message.get("content", ""),
+                "colorContent": message.get("colorContent", ""),
+                "conversationId": str(message.get("conversationId", "")) 
+            })
+
+        # Initialize file information
+        file_info = None
+        file_id = conversation.get("fileId")
+        
+        # If there is a fileId, fetch the file information
+        if file_id:
+            file_data = files_collection.find_one({"_id": ObjectId(file_id)})
+            if file_data:
+                file_info = {
+                    "fileId": str(file_data["_id"]), 
+                    "fileTitle": file_data.get("file_title", ""),
+                }
+
+        response_data = {
+            "conversation": {
+                "id": str(conversation["_id"]), 
+                "createdAt": conversation.get("createdAt", ""),
+                "title": conversation.get("title", ""),
+                "username": conversation.get("username"), 
+            },
+            "file": file_info,
+            "messages": plain_messages,
+            "colorMessages": color_messages
+        }
+
+        response_json = json.dumps(response_data, indent=4)
+        return Response(
+            response_json,
+            mimetype='application/json',
+            headers={'Content-Disposition': 'attachment;filename=conversation.json'}
+        )
+
+    except Exception as e:
+        return jsonify({"error": f"An error occurred: {str(e)}"}), 500
 
 # ====================================== /deletefile (DELETE) =========================================>
 
@@ -284,6 +379,51 @@ def create_conversation():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 400
+
+# ====================================== /search =====================================================>
+
+@app.route("/search", methods=["POST"])
+def searchQuestions():
+    try:
+        data = request.json
+        content = data.get('content', None)  # Assuming 'content' contains the string to search for
+        fileId = data.get('fileId', None)
+
+        if not content or not fileId:
+            return jsonify({"error": "Missing content or fileId in request"}), 400
+
+        # Find the file using fileId
+        file = files_collection.find_one({"_id": ObjectId(fileId)})
+        if not file:
+            return jsonify({"error": "File not found"}), 404
+
+        # Use regex to search for the question in file_data
+        file_data = file.get("file_data", [])
+
+        best_match = None
+        max_score = -1
+
+        # Loop through the file_data to find the most accurate match
+        for entry in file_data:
+            file_question = entry.get("question", "")
+
+            # Use regex to find matches in the question
+            match = re.search(re.escape(content), file_question, re.IGNORECASE)
+            if match:
+                # Calculate score based on match length (adjust as needed)
+                score = len(match.group(0))
+                if score > max_score:
+                    max_score = score
+                    best_match = file_question
+
+        if best_match:
+            return jsonify({ "question": best_match })
+        else:
+            return jsonify({"error": "No matching question found"}), 404
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
 
 # ====================================== /chat ====================================================>
 
