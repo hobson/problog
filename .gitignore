@@ -1,24 +1,28 @@
-# BigData
+# Big Data Files
 **/*.embeddings.memmap
 # .knowt-data/corpus_obsidian
+**/*.joblib
+**/*.pickle
+
+# Binaries
 **/.ipynb_checkpoints
 .venv/
 venv/
-.env
-.DS_Store
+# reveal.js/
+
+# Mac BS
+.DS_*
+# .DS_Store
 Include
 Lib
 Scripts
 share
-
-**/*.joblib
-**/*.pickle
+data/*.json
 
 # DL models
 *.pt
 **/checkpoints/
 **/checkpoint/
-reveal.js/
 
 # bigdata
 db.sqlite3
@@ -32,10 +36,6 @@ db.sqlite3
 **/albert-large-*
 /char_rnn_from_scratch_refactored.meta.json
 
-# submodules
-src/wikipedia
-src/nessvec
-
 # Temporary and binary files
 condaenv.*.requirements.txt
 *~
@@ -45,11 +45,9 @@ condaenv.*.requirements.txt
 !.isort.cfg
 *.orig
 *.log
-disaster_tweets_cnn_pipeline*.json
 *.pot
 .pytest_cache/*
 __pycache__/*
-.DS_*
 .cache/*
 .*.swp
 .ipynb_checkpoints
@@ -124,16 +122,12 @@ docs/**/*.html
 
 # secrets and private user data
 .env
-*history.txt
-**/*secret*
-**/*private*
-**/*credential*
-**/*obsidian*
-**/*Obsidian*
-!.env_template
-!.env.example
-!.env_example
+# *history.txt
+*private*
+*credential*
+*secret*
+*.env
+!example.env
 
 # frontend (js)
 **/node_modules
-.aider*

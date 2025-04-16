@@ -25,6 +25,7 @@ const Controller: React.FC<{
     const [loading, setLoading] = useState<boolean>(false);
     const [uploadSuccess, setUploadSuccess] = useState<boolean | null>(null);
     const [fileTitle, setFileTitle] = useState('');
+    console.log('fileTitle: ' + fileTitle);
 
     // Handle file selection
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {

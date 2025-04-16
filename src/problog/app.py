@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 import os
-import csv 
+import csv
 import re
 import pandas as pd
 from bson import ObjectId
@@ -26,8 +26,6 @@ df.to_csv("gsm8k.csv")
 # ==================================================================================================>
 # ======================================== CORS ====================================================>
 # ==================================================================================================>
-
-from flask_cors import CORS
 
 app = Flask(__name__)
 cors = CORS(app)
@@ -60,15 +58,16 @@ color_messages = []
 
 # ====================================== / ====================================================>
 
-@app.route("/")
+@app.route("/hello")
 def hello_world():
     try:
         collections = db.list_collection_names()
         return {"message": "Server and Database are working fine!", "collections": collections}
     except Exception as e:
         return {"message": "Error connecting to the database", "error": str(e)}, 500
-    
+
 # ====================================== /conversations (GET) ========================================>
+
 
 @app.route("/conversations", methods=["GET"])
 def get_conversations():
@@ -127,20 +126,25 @@ def get_conversations():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 400
-    
+
 # ====================================== /uploadFile (POST) ========================================>
+
 
 def clean_math_expression(data):
     cleaned_data = re.sub(r"<<.*?>>", "", data)
     cleaned_data = cleaned_data.replace("#", "")
     return cleaned_data.strip()
 
+
 ALLOWED_EXTENSIONS = {'csv'}
-EXPECTED_COLUMNS = ["id", "question", "answer"] 
+EXPECTED_COLUMNS = ["id", "question", "answer"]
 
 # Helper function to check allowed file type
+
+
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 
 @app.route("/uploadFile", methods=["POST"])
 def uploadFile():
@@ -159,14 +163,14 @@ def uploadFile():
         if file and allowed_file(file.filename):
             # Secure the filename to prevent unsafe characters
             filename = secure_filename(file.filename)
-            
+
             # Extract file title from the filename (without extension)
             file_title = os.path.splitext(filename)[0]
 
             # Read the CSV file content
             file_data = []
             csv_reader = csv.reader(file.read().decode('utf-8').splitlines())
-            
+
             # Extract the header (first row) of the CSV
             header = next(csv_reader, None)
 
@@ -178,7 +182,7 @@ def uploadFile():
 
             # Process each subsequent row
             for row in csv_reader:
-                if len(row) == 3: 
+                if len(row) == 3:
                     question = row[1].strip()
                     answer = row[2].strip()
                     file_data.append({"question": question, "answer": clean_math_expression(answer)})
@@ -204,7 +208,7 @@ def uploadFile():
             )
 
             return jsonify({
-                "message": "File uploaded successfully", 
+                "message": "File uploaded successfully",
                 "file_id": str(inserted_file.inserted_id),
                 "file_title": str(file_title),
             }), 200
@@ -215,6 +219,7 @@ def uploadFile():
         return jsonify({"error": str(e)}), 500
 
 # ====================================== /deletefile (DELETE) =========================================>
+
 
 @app.route("/deleteFile", methods=["DELETE"])
 def deleteFile():
@@ -256,8 +261,9 @@ def deleteFile():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-    
+
 # ====================================== /conversations (POST) ========================================>
+
 
 @app.route("/conversations", methods=["POST"])
 def create_conversation():
@@ -270,7 +276,7 @@ def create_conversation():
         conversation = Conversation(username)
         inserted_conversation = conversations_collection.insert_one(conversation.to_dict())
         conversation_id = inserted_conversation.inserted_id
-        
+
         return jsonify({
             "message": "Conversation created successfully",
             "conversationId": str(conversation_id)
@@ -280,6 +286,7 @@ def create_conversation():
         return jsonify({"error": str(e)}), 400
 
 # ====================================== /chat ====================================================>
+
 
 @app.route("/chat", methods=["POST"])
 def colors():
@@ -294,7 +301,7 @@ def colors():
         conversationId = data.get('conversationId')
         if not conversationId or not ObjectId.is_valid(conversationId):
             return jsonify({"error": "Invalid or missing conversationId"}), 400
-        
+
         conversation = conversations_collection.find_one({"_id": ObjectId(conversationId)})
         if not conversation:
             return jsonify({"error": "Conversation not found"}), 404
@@ -318,7 +325,7 @@ def colors():
         content = user_message.get("content", "")
         if not content:
             return jsonify({"error": "User message content is missing"}), 400
-        
+
         colorContent = "<span>No ColorContent</span>"
 
         # Create and store the user message
@@ -374,8 +381,9 @@ def colors():
 
     except Exception as e:
         return jsonify({"error": f"An error occurred: {str(e)}"}), 500
-    
+
 # ====================================== /messages ====================================================>
+
 
 @app.route("/messages", methods=["GET"])
 def get_messages():
@@ -383,15 +391,15 @@ def get_messages():
         conversationId = request.args.get('conversationId')
         if not conversationId or not ObjectId.is_valid(conversationId):
             return jsonify({"error": "Invalid or missing conversationId"}), 400
-        
+
         # Find the conversation using the conversationId
         conversation = conversations_collection.find_one({"_id": ObjectId(conversationId)})
         if not conversation:
             return jsonify({"error": "Conversation not found"}), 404
-        
+
         # Fetch messages for the specified conversation
         messages = list(messages_collection.find({"conversationId": ObjectId(conversationId)}))
-        
+
         # Prepare lists for messages and colorMessages
         plain_messages = []
         color_messages = []
@@ -412,22 +420,22 @@ def get_messages():
         # Initialize file information
         file_info = None
         file_id = conversation.get("fileId")
-        
+
         # If there is a fileId, fetch the file information
         if file_id:
             file_data = files_collection.find_one({"_id": ObjectId(file_id)})
             if file_data:
                 file_info = {
-                    "fileId": str(file_data["_id"]), 
+                    "fileId": str(file_data["_id"]),
                     "fileTitle": file_data.get("file_title", ""),
                 }
 
         response = {
             "conversation": {
-                "id": str(conversation["_id"]), 
+                "id": str(conversation["_id"]),
                 "createdAt": conversation.get("createdAt", ""),
                 "title": conversation.get("title", ""),
-                "username": conversation.get("username"), 
+                "username": conversation.get("username"),
             },
             "file": file_info,
             "messages": plain_messages,
@@ -441,25 +449,26 @@ def get_messages():
 
 # ====================================== /reset ====================================================>
 
+
 @app.route("/reset", methods=["POST"])
 def reset_messages():
     try:
         # Extract the conversationId from the request body
         data = request.get_json()
         conversation_id = data.get('conversationId')
-        
+
         if not conversation_id:
             return jsonify({"error": "Conversation ID is required"}), 400
-        
+
         # Delete all messages associated with the conversationId
         messages_collection.delete_many({"conversationId": ObjectId(conversation_id)})
-        
+
         # Update the conversation to have empty messages
         conversations_collection.update_one(
             {"_id": ObjectId(conversation_id)},
             {"$set": {"messages": []}}
         )
-        
+
         # Fetch the updated conversation
         updated_conversation = conversations_collection.find_one({"_id": ObjectId(conversation_id)})
 
@@ -467,11 +476,12 @@ def reset_messages():
             "message": "Messages reset successfully",
             "conversation": updated_conversation
         }), 200
-    
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-    
+
 # ====================================== /register user ====================================================>
+
 
 @app.route("/register", methods=["POST"])
 def register():
@@ -479,22 +489,26 @@ def register():
         data = request.get_json()
         username = data.get('username')
         password = data.get('password')
-        
+
         if not username or not password:
             return jsonify({"error": "Username and password are required"}), 400
-        
+
         existing_user = users.find_one({"username": username})
-        
+
         if existing_user:
             return jsonify({"error": "Username already exists. Please choose another one."}), 409
-        
+
         hashed_password = generate_password_hash(password)
-        
+
         user = Users(username, hashed_password)
-        result = users.insert_one(user.to_dict())
-        
-        return jsonify({"message": "Registration successful", "username": user.username}), 201
-    
+        result = users.insert_one(user.to_dict())  # noqa
+
+        return jsonify({
+            "message": "Registration successful",
+            "username": user.username,
+            #    "result": result,
+        }), 201
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -507,13 +521,13 @@ def login():
         data = request.get_json()
         username = data.get('username')
         password = data.get('password')
-        
+
         if not username or not password:
             return jsonify({"error": "Username and password are required"}), 400
 
         # Find the user by username
         result = users.find_one({"username": username})
-        
+
         if result:
             # Verify the password
             if check_password_hash(result['password'], password):
@@ -522,11 +536,12 @@ def login():
                 return jsonify({"error": "Incorrect password"}), 401
         else:
             return jsonify({"error": "Username not found"}), 404
-    
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 # ====================================== debug ====================================================>
+
 
 if __name__ == "__main__":
     app.run(debug=True)
